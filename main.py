@@ -396,7 +396,7 @@ async def telegram_command(command: str = Form(...)):
                 send_telegram_msg(f"❌ <b>HATA</b>\n⚠️ {error_msg}\n\n💡 <i>Detaylar için logları kontrol edin.</i>")
                 return {"status": "error", "message": error_msg}
         elif command.strip().lower() == "/admin":
-            admin_url = f"http://{os.getenv('SERVER_IP', 'localhost')}:8000/admin"
+            admin_url = "https://srv.cepteportfoy.com/admin.html" # Frontend sunucusundaki path
             msg = f"🔑 <b>ADMIN PANEL ERİŞİMİ</b>\n\n🌐 {admin_url}\n\n💡 <i>Panel üzerinden para çekme ve istatistikleri yönetebilirsiniz.</i>"
             send_telegram_msg(msg)
             return {"status": "success", "message": "Admin link sent"}
@@ -494,4 +494,4 @@ if __name__ == "__main__":
     # send_telegram_msg("🚀 *Cobo, CRM & MT5 Entegre Sistem Yayında!*\n\n📋 Komutlar:\n/sweep - Wallet durumunu görüntüle")
     
     # FastAPI'yi başlat
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)), proxy_headers=True, forwarded_allow_ips='*')
