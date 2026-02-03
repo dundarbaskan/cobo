@@ -1,0 +1,110 @@
+import os
+from motor.motor_asyncio import AsyncIOMotorClient
+from dotenv import load_dotenv
+
+load_dotenv()
+
+MONGODB_URL = "mongodb+srv://wimcrm:edWfyiwTjpnkgAzx@data.drjzdcy.mongodb.net/maxipinfo?retryWrites=true&w=majority&appName=DATA"
+
+client = AsyncIOMotorClient(MONGODB_URL)
+db = client.maxipinfo
+cobo_collection = db.COBO
+
+async def save_lead(lead_data):
+    """
+    Lead bilgisini MongoDB'ye kaydeder.
+    lead_data: { "name": "...", "tp_number": "...", "email": "..." }
+    """
+    await cobo_collection.update_one(
+        {"tp_number": str(lead_data["tp_number"])},
+        {"$set": lead_data},
+        upsert=True
+    )
+
+async def get_lead_by_tp(tp_number):
+    return await cobo_collection.find_one({"tp_number": str(tp_number)})
+
+async def get_lead_by_address(address):
+    """
+    Cüzdan adresinden hangi lead'e ait olduğunu bulur.
+    """
+    return await cobo_collection.find_one({"wallets.address": address})
+
+async def save_wallet_to_lead(tp_number, wallet_data):
+    """
+    Oluşturulan cüzdanı lead'e bağlar.
+    """
+    await cobo_collection.update_one(
+        {"tp_number": str(tp_number)},
+        {"$push": {"wallets": wallet_data}}
+    )
+
+async def increment_deposit_count(tp_number):
+    """
+    Yatırım sayısını artırır ve yeni sayıyı döner.
+    """
+    result = await cobo_collection.find_one_and_update(
+        {"tp_number": str(tp_number)},
+        {"$inc": {"deposit_count": 1}},
+        return_document=True,
+        upsert=True
+    )
+    return result.get("deposit_count", 1)
+
+async def get_existing_wallet(tp_number, asset_name, chain_id):
+    """
+    Belirli bir varlık ve ağ için mevcut cüzdanı kontrol eder.
+    """
+    lead = await cobo_collection.find_one({
+        "tp_number": str(tp_number),
+        "wallets": {
+            "$elemMatch": {
+                "asset": asset_name,
+                "chain_id": chain_id
+            }
+        }
+    })
+    
+    if lead and "wallets" in lead:
+        for wallet in lead["wallets"]:
+            if wallet.get("asset") == asset_name and wallet.get("chain_id") == chain_id:
+                return wallet
+    return None
+
+async def is_transaction_processed(transaction_id):
+    """İşlemin daha önce işlenip işlenmediğini kontrol eder."""
+    res = await db.transactions.find_one({"transaction_id": transaction_id})
+    return res is not None
+
+async def log_transaction(transaction_id, tp_number, amount, symbol, status):
+    """İşlemi kaydederek mükerrerliği önler."""
+    await db.transactions.insert_one({
+        "transaction_id": transaction_id,
+        "tp_number": str(tp_number),
+        "amount": amount,
+        "symbol": symbol,
+        "status": status
+    })
+
+async def update_financial_stats(tp_number, amount, is_deposit=True):
+    """Kullanıcının toplam yatırım/çekim bilgisini günceller."""
+    field = "total_deposit" if is_deposit else "total_withdrawal"
+    result = await cobo_collection.find_one_and_update(
+        {"tp_number": str(tp_number)},
+        {"$inc": {field: amount}},
+        return_document=True,
+        upsert=True
+    )
+    return result
+
+async def get_all_our_addresses():
+    """Sistemdeki tüm cüzdan adreslerini döner (iç transfer tespiti için)"""
+    addresses = set()
+    cursor = cobo_collection.find({}, {"wallets": 1})
+    async for doc in cursor:
+        if "wallets" in doc:
+            for wallet in doc["wallets"]:
+                if "address" in wallet:
+                    addresses.add(wallet["address"])
+    return addresses
+

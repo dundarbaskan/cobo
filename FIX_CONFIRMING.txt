@@ -1,0 +1,16 @@
+# main.py için düzeltme - Satır 215-226 arası
+
+# ONAY BEKLENİYOR - SADECE İLK DEFA
+if status == "CONFIRMING":
+    # İşlemi logla (mükerrer kontrolü için - bir daha gelmeyecek)
+    await log_transaction(transaction_id, tp_number, amount, symbol, "CONFIRMING")
+    
+    # Basit tespit mesajı (onay sayısı YOK)
+    wait_msg = (
+        f"⏳ <b>ÖDEME TESPİT EDİLDİ</b>\n\n"
+        f"👤 <b>Müşteri:</b> {name}\n"
+        f"🔑 <b>TP:</b> <code>{tp_number}</code>\n"
+        f"💵 <b>Tutar:</b> {formatted_amount} $\n\n"
+        f"<i>Ödeme onaylandığında otomatik olarak MT5 hesabına aktarılacaktır.</i>"
+    )
+    send_telegram_msg(wait_msg)
