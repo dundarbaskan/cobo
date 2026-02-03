@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yatırımcı Portalı | Güvenli Kripto Tahsilat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #d4af37;
+            --accent-glow: rgba(212, 175, 55, 0.4);
+            --bg: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            max-width: 180px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-weight: 800;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            color: white;
+            letter-spacing: -0.025em;
+        }
+
+        p.subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), #fef08a, var(--accent));
+        }
+
+        /* Step Transitions */
+        .step {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .step.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            display: block;
+            color: var(--text-muted);
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: #fff;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            filter: brightness(1.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-accent {
+            background-color: var(--accent);
+            color: var(--primary);
+        }
+
+        /* Asset Grid Modernization */
+        .asset-grid {
+            display: grid;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+        }
+
+        .asset-item {
+            padding: 1rem 0.5rem;
+            background: #fff;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .asset-item img {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 0.5rem;
+            transition: transform 0.3s;
+        }
+
+        .asset-item span {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .asset-item:hover {
+            border-color: var(--accent);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .asset-item:hover img {
+            transform: translateY(-2px);
+        }
+
+        .asset-item.selected {
+            border-color: var(--accent);
+            background: #fffdf5;
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+
+        /* Stats Area */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 20px;
+        }
+
+        .stat-card {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* QR Area */
+        .qr-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .qr-card img {
+            width: 180px;
+            height: 180px;
+        }
+
+        .address-box {
+            background: #f8fafc;
+            padding: 1.25rem;
+            border-radius: 16px;
+            border: 2px dashed var(--border);
+            position: relative;
+            margin: 1.5rem 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .address-box:hover {
+            border-color: var(--accent);
+            background: #fffdf5;
+        }
+
+        .address-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .copy-hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Footer */
+        .footer-status {
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.4;
+            }
+        }
+
+        /* Layout for Mobile */
+        @media (max-width: 640px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .asset-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .asset-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .stat-card {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.5rem 1rem;
+            }
+
+            .stat-label {
+                margin-bottom: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <img src="/logolar/Cep Portföy_Logo_Horizontal 1 (1).png" class="logo" alt="Logo">
+    </header>
+
+    <div class="container">
+        <h1>Yatırımcı Portalı</h1>
+        <p class="subtitle">Güvenli ve hızlı kripto ödeme sistemi</p>
+
+        <div class="card">
+            <!-- STEP 1: LOGIN -->
+            <div id="step-login" class="step active">
+                <div class="input-group">
+                    <label>TP Numaranız</label>
+                    <input type="text" id="tp-input" placeholder="Örn: 123456">
+                </div>
+                <button class="btn" onclick="verifyTP()">
+                    <span>Devam Et</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- STEP 2: ASSET SELECTION -->
+            <div id="step-asset" class="step">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div style="text-align: left;">
+                        <h3 id="welcome-msg" style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">
+                            Hoşgeldiniz</h3>
+                        <p style="font-size: 0.75rem; color: var(--text-muted);">Hesap İstatistikleri</p>
+                    </div>
+                    <button onclick="location.reload()"
+                        style="background: #f1f5f9; border: none; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #ef4444; transition: 0.2s;">
+                        Çıkış Yap
+                    </button>
+                </div>
+
+                <!-- MT5 Stats Area -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Bakiye</div>
+                        <div id="stat-balance" class="stat-value">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Varlık</div>
+                        <div id="stat-equity" class="stat-value">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Kredi</div>
+                        <div id="stat-credit" class="stat-value">$0.00</div>
+                    </div>
+                </div>
+                <p id="last-sync-text"
+                    style="font-size: 0.65rem; color: var(--text-muted); margin-top: -0.75rem; margin-bottom: 1.5rem; text-align: right;">
+                    Son güncelleme: --</p>
+
+                <label>Lütfen Yatırım Yapacağınız Varlığı Seçin</label>
+                <div class="asset-grid" style="grid-template-columns: repeat(5, 1fr);">
+                    <div class="asset-item" onclick="selectAsset('USDT', this)">
+                        <img src="https://cryptologos.cc/logos/tether-usdt-logo.svg" alt="USDT">
+                        <span>USDT</span>
+                    </div>
+                    <div class="asset-item" onclick="selectAsset('BTC', this)">
+                        <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.svg" alt="BTC">
+                        <span>Bitcoin</span>
+                    </div>
+                    <div class="asset-item" onclick="selectAsset('ETH', this)">
+                        <img src="https://cryptologos.cc/logos/ethereum-eth-logo.svg" alt="ETH">
+                        <span>Ethereum</span>
+                    </div>
+                    <div class="asset-item" onclick="selectAsset('BNB', this)">
+                        <img src="https://cryptologos.cc/logos/bnb-bnb-logo.svg" alt="BNB">
+                        <span>BNB</span>
+                    </div>
+                    <div class="asset-item" onclick="selectAsset('SOL', this)">
+                        <img src="https://cryptologos.cc/logos/solana-sol-logo.svg" alt="Solana">
+                        <span>Solana</span>
+                    </div>
+                    <div class="asset-item" onclick="selectAsset('TRX', this)">
+                        <img src="https://cryptologos.cc/logos/tron-trx-logo.svg" alt="TRX">
+                        <span>TRON</span>
+                    </div>
+                    <div class="asset-item" onclick="selectAsset('XRP', this)">
+                        <img src="https://cryptologos.cc/logos/xrp-xrp-logo.svg" alt="XRP">
+                        <span>XRP</span>
+                    </div>
+                    <div class="asset-item" onclick="selectAsset('AVAX', this)">
+                        <img src="https://cryptologos.cc/logos/avalanche-avax-logo.svg" alt="AVAX">
+                        <span>Avax</span>
+                    </div>
+                    <div class="asset-item" onclick="selectAsset('MATIC', this)">
+                        <img src="https://cryptologos.cc/logos/polygon-matic-logo.svg" alt="MATIC">
+                        <span>Polygon</span>
+                    </div>
+                    <div class="asset-item" onclick="selectAsset('LTC', this)">
+                        <img src="https://cryptologos.cc/logos/litecoin-ltc-logo.svg" alt="LTC">
+                        <span>Litecoin</span>
+                    </div>
+                </div>
+
+                <!-- Network Selection Area -->
+                <div id="network-area"
+                    style="display:none; margin-top: 1.5rem; text-align: left; padding: 1.5rem; background: #fff; border-radius: 20px; border: 2px solid var(--accent);">
+                    <label style="margin-bottom: 0.75rem;">Ağ (Network) Seçin</label>
+                    <select id="network-select"
+                        style="width:100%; padding:1rem; border-radius:12px; border:2px solid #f1f5f9; margin-bottom: 1.25rem; font-size: 1rem; outline: none; transition: 0.2s;">
+                        <!-- JS ile dolacak -->
+                    </select>
+                    <button class="btn btn-accent" onclick="generateWallet()">
+                        <span>Adresimi Görüntüle</span>
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3: RESULT -->
+            <div id="step-result" class="step">
+                <h3 style="margin-bottom: 1rem; color: var(--primary);">Ödeme Adresiniz</h3>
+                <div class="qr-card">
+                    <img id="qr-img" src="" alt="QR">
+                </div>
+
+                <div class="address-box" onclick="copyAddress()">
+                    <div class="address-text" id="address-text">---</div>
+                    <div class="copy-hint">Kopyalamak için tıklayın</div>
+                </div>
+
+                <div
+                    style="background: #fff8eb; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; text-align: left; border-left: 4px solid var(--accent);">
+                    <p style="font-size: 0.8rem; color: #92400e; font-weight: 500;">
+                        ⚠️ Lütfen sadece seçtiğiniz ağ üzerinden gönderim yapın. Yanlış ağ üzerinden yapılan gönderimler
+                        kurtarılamayabilir.
+                    </p>
+                </div>
+
+                <button class="btn" onclick="showStep('step-asset')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Varlık Listesine Dön</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="footer-status">
+            <div class="status-dot"></div>
+            <span></span>
+        </div>
+        <p style="margin-top: 1rem; font-size: 0.75rem; color: rgba(255,255,255,0.4);">© 2026 Cep Portföy. Tüm hakları
+            saklıdır.</p>
+    </div>
+
+    <script>
+        let currentTP = "";
+        let selectedAsset = "";
+        const API_BASE_URL = "https://srv.cepteportfoy.com";
+
+        async function verifyTP() {
+            const tp = document.getElementById('tp-input').value;
+            if (!tp) return Swal.fire('Hata', 'Lütfen TP numaranızı girin.', 'error');
+
+            const formData = new FormData();
+            formData.append('tp_number', tp);
+
+            try {
+                const res = await fetch(API_BASE_URL + '/api/verify_tp', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    currentTP = tp;
+                    document.getElementById('welcome-msg').innerText = `Hoşgeldin, ${data.name}`;
+
+                    // MT5 İstatistiklerini Güncelle
+                    if (data.mt5) {
+                        document.getElementById('stat-balance').innerText = `$${parseFloat(data.mt5.balance).toLocaleString()}`;
+                        document.getElementById('stat-equity').innerText = `$${parseFloat(data.mt5.equity).toLocaleString()}`;
+                        document.getElementById('stat-credit').innerText = `$${parseFloat(data.mt5.credit).toLocaleString()}`;
+
+                        if (data.last_sync) {
+                            const date = new Date(data.last_sync * 1000);
+                            document.getElementById('last-sync-text').innerText = `Son güncelleme: ${date.toLocaleTimeString()}`;
+                        }
+                    }
+
+                    showStep('step-asset');
+                } else {
+                    Swal.fire('Hata', data.message, 'error');
+                }
+            } catch (e) {
+                Swal.fire('Hata', 'Sistem hatası oluştu.', 'error');
+            }
+        }
+
+        function selectAsset(asset, el) {
+            selectedAsset = asset;
+            document.querySelectorAll('.asset-item').forEach(i => i.classList.remove('selected'));
+            el.classList.add('selected');
+
+            const netSelect = document.getElementById('network-select');
+            netSelect.innerHTML = "";
+
+            // Asset -> Network Mapping
+            const networks = {
+                'USDT': [
+                    { val: 'USDT', text: 'TRC20 (Tron)' },
+                    { val: 'BSC', text: 'BEP20 (Binance)' },
+                    { val: 'ETH', text: 'ERC20 (Ethereum)' },
+                    { val: 'SOL', text: 'Solana (SPL)' },
+                    { val: 'MATIC', text: 'Polygon (POS)' }
+                ],
+                'BTC': [{ val: 'BTC', text: 'Bitcoin Mainnet' }],
+                'ETH': [{ val: 'ETH', text: 'Ethereum Mainnet' }],
+                'BNB': [{ val: 'BSC', text: 'Binance Smart Chain' }],
+                'SOL': [{ val: 'SOL', text: 'Solana Mainnet' }],
+                'XRP': [{ val: 'XRP', text: 'Ripple Network' }],
+                'ADA': [{ val: 'ADA', text: 'Cardano Network' }],
+                'AVAX': [{ val: 'AVAXC', text: 'Avalanche C-Chain' }],
+                'DOT': [{ val: 'DOT', text: 'Polkadot Mainnet' }],
+                'TRX': [{ val: 'TRON', text: 'Tron Mainnet' }],
+                'DOGE': [{ val: 'DOGE', text: 'Dogecoin Network' }],
+                'LINK': [{ val: 'ETH', text: 'Chainlink (ERC20)' }],
+                'XLM': [{ val: 'XLM', text: 'Stellar Lumens' }],
+                'MATIC': [{ val: 'MATIC', text: 'Polygon Network' }],
+                'LTC': [{ val: 'LTC', text: 'Litecoin Mainnet' }],
+                'DAI': [{ val: 'ETH', text: 'DAI (ERC20)' }],
+                'SHIB': [{ val: 'ETH', text: 'Shiba Inu (ERC20)' }],
+                'ETC': [{ val: 'ETC', text: 'Ethereum Classic' }],
+                'VET': [{ val: 'VET', text: 'VeChain Thor' }],
+                'TON': [{ val: 'TON', text: 'The Open Network' }]
+            };
+
+            const options = networks[asset] || [{ val: asset, text: asset + ' Mainnet' }];
+
+            options.forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt.val;
+                o.textContent = opt.text;
+                netSelect.appendChild(o);
+            });
+
+            document.getElementById('network-area').style.display = 'block';
+
+            // Mobilde ağ seçimine otomatik scroll
+            setTimeout(() => {
+                document.getElementById('network-area').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }, 100);
+        }
+
+        async function generateWallet() {
+            const net = document.getElementById('network-select').value;
+
+            Swal.fire({ title: 'Adresiniz Hazırlanıyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+            const formData = new FormData();
+            formData.append('tp_number', currentTP);
+            formData.append('chain_id', net);
+            formData.append('asset_name', selectedAsset);
+
+            try {
+                const res = await fetch(API_BASE_URL + '/api/create_wallet', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.address) {
+                    document.getElementById('qr-img').src = 'data:image/png;base64,' + data.qr_code;
+                    document.getElementById('address-text').innerText = data.address;
+                    showStep('step-result');
+
+                    if (data.existing) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Mevcut Cüzdan',
+                            text: 'Bu varlık için zaten bir cüzdanınız var. Mevcut adresiniz gösteriliyor.',
+                            timer: 3000
+                        });
+                    } else {
+                        Swal.close();
+                    }
+                } else {
+                    Swal.fire('Hata', data.error, 'error');
+                }
+            } catch (e) {
+                Swal.fire('Hata', 'Sistem hatası.', 'error');
+            }
+        }
+
+        function showStep(stepId) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        function copyAddress() {
+            const txt = document.getElementById('address-text').innerText;
+            navigator.clipboard.writeText(txt);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Kopyalandı', showConfirmButton: false, timer: 1000 });
+        }
+    </script>
+</body>
+
+</html>
