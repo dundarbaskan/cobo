@@ -470,6 +470,9 @@
     </div>
 
     <script>
+        // Global config
+        const API_BASE_URL = "https://srv.cepteportfoy.com";
+
         // Tab switching
         function showTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -495,7 +498,7 @@
         // Load dashboard
         async function refreshDashboard() {
             try {
-                const response = await fetch('/api/admin/dashboard');
+                const response = await fetch(API_BASE_URL + '/api/admin/dashboard');
                 const data = await response.json();
 
                 if (data.success) {
@@ -513,7 +516,7 @@
 
         async function loadDetailedBalances() {
             try {
-                const response = await fetch('/api/admin/dashboard');
+                const response = await fetch(API_BASE_URL + '/api/admin/dashboard');
                 const data = await response.json();
 
                 if (data.success && data.balances) {
@@ -544,7 +547,7 @@
         // Load wallet info
         async function loadWalletInfo() {
             try {
-                const response = await fetch('/api/admin/wallet');
+                const response = await fetch(API_BASE_URL + '/api/admin/wallet');
                 const data = await response.json();
 
                 if (data.success) {
@@ -556,7 +559,7 @@
                     `;
 
                     // Load addresses
-                    const addrResponse = await fetch('/api/admin/addresses');
+                    const addrResponse = await fetch(API_BASE_URL + '/api/admin/addresses');
                     const addrData = await addrResponse.json();
 
                     if (addrData.success && addrData.data.length > 0) {
@@ -578,7 +581,7 @@
         // Load transactions
         async function loadTransactions() {
             try {
-                const response = await fetch('/api/admin/transactions');
+                const response = await fetch(API_BASE_URL + '/api/admin/transactions');
                 const data = await response.json();
 
                 if (data.success && data.data.length > 0) {
@@ -619,7 +622,7 @@
             showAlert('🚀 Manuel sweep işlemi başlatıldı. Lütfen bekleyin...', 'success');
 
             try {
-                const response = await fetch('/api/admin/sweep', {
+                const response = await fetch(API_BASE_URL + '/api/admin/sweep', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ main_address: mainAddress })
@@ -659,7 +662,7 @@
             };
 
             try {
-                const response = await fetch('/api/admin/withdrawal', {
+                const response = await fetch(API_BASE_URL + '/api/admin/withdrawal', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
@@ -682,7 +685,7 @@
         // Load withdrawal history
         async function loadWithdrawalHistory() {
             try {
-                const response = await fetch('/api/admin/transactions?type=Withdrawal');
+                const response = await fetch(API_BASE_URL + '/api/admin/transactions?type=Withdrawal');
                 const data = await response.json();
 
                 if (data.success && data.data.length > 0) {

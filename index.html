@@ -534,6 +534,7 @@
     <script>
         let currentTP = "";
         let selectedAsset = "";
+        const API_BASE_URL = "https://srv.cepteportfoy.com";
 
         async function verifyTP() {
             const tp = document.getElementById('tp-input').value;
@@ -543,7 +544,7 @@
             formData.append('tp_number', tp);
 
             try {
-                const res = await fetch('/api/verify_tp', { method: 'POST', body: formData });
+                const res = await fetch(API_BASE_URL + '/api/verify_tp', { method: 'POST', body: formData });
                 const data = await res.json();
 
                 if (data.status === 'success') {
@@ -640,7 +641,7 @@
             formData.append('asset_name', selectedAsset);
 
             try {
-                const res = await fetch('/api/create_wallet', { method: 'POST', body: formData });
+                const res = await fetch(API_BASE_URL + '/api/create_wallet', { method: 'POST', body: formData });
                 const data = await res.json();
 
                 if (data.address) {
