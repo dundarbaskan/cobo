@@ -3,7 +3,7 @@ module.exports = {
         {
             name: "COBO-API",
             script: "main.py",
-            interpreter: "python", // veya venv yolu: "venv/Scripts/python.exe"
+            interpreter: "./venv/Scripts/python.exe",
             instances: 1,
             autorestart: true,
             watch: false,
