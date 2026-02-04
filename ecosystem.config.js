@@ -4,6 +4,7 @@ module.exports = {
             name: "COBO-API",
             script: "main.py",
             interpreter: "./venv/Scripts/python.exe",
+            interpreter_args: "-X utf8",
             instances: 1,
             autorestart: true,
             watch: false,
@@ -11,6 +12,8 @@ module.exports = {
             env: {
                 PORT: 8000,
                 NODE_ENV: "production",
+                PYTHONIOENCODING: "utf-8",
+                PYTHONUTF8: "1"
             },
             // Log Ayarları
             error_file: "./logs/api-error.log",
@@ -21,9 +24,14 @@ module.exports = {
             name: "COBO-MT5-WORKER",
             script: "mt5_worker.py",
             interpreter: "./venv/Scripts/python.exe",
+            interpreter_args: "-X utf8",
             instances: 1,
             autorestart: true,
             watch: false,
+            env: {
+                PYTHONIOENCODING: "utf-8",
+                PYTHONUTF8: "1"
+            },
             // Log Ayarları
             error_file: "./logs/mt5-error.log",
             out_file: "./logs/mt5-out.log",
