@@ -20,7 +20,7 @@ module.exports = {
         {
             name: "COBO-MT5-WORKER",
             script: "mt5_worker.py",
-            interpreter: "python",
+            interpreter: "./venv/Scripts/python.exe",
             instances: 1,
             autorestart: true,
             watch: false,
