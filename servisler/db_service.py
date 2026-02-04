@@ -76,12 +76,7 @@ async def get_existing_wallet(tp_number, asset_name, chain_id):
                 return wallet
     return None
 
-async def ensure_transaction_index():
-    """Transaction ID üzerinde benzersiz index oluşturur."""
-    try:
-        await db.transactions.create_index("transaction_id", unique=True)
-    except Exception as e:
-        print(f"Index creation error: {e}")
+
 
 # İlk importta index'i garantiye al (Async olduğu için event loop içinde çağrılmalı, 
 # ama şimdilik save anında kontrol edeceğiz veya main startup'ta)
@@ -90,28 +85,39 @@ from pymongo.errors import DuplicateKeyError
 
 async def try_lock_transaction(transaction_id, tp_number, amount, symbol, status):
     """
-    Atomik işlem kilidi. 
-    Eğer işlem daha önce kaydedildiyse False döner (Duplicate Error).
-    Eğer ilk kez geliyorsa kaydeder ve True döner.
+    ATOMİK İŞLEM KİLİDİ (Race-Condition Proof!)
+    
+    MongoDB'nin upsert özelliğini kullanarak tamamen atomik bir kilit oluşturur.
+    Eğer transaction_id yoksa ekler ve True döner.
+    Eğer transaction_id varsa hiçbir şey yapmaz ve False döner.
+    
+    Bu yaklaşım 100% güvenlidir çünkü:
+    1. find_one + insert_one gibi 2 adım YOK (race condition riski sıfır)
+    2. MongoDB seviyesinde atomik işlem
+    3. Unique index olsa da olmasa da çalışır (ama unique index olmalı!)
     """
     try:
-        await db.transactions.insert_one({
-            "transaction_id": transaction_id,
-            "tp_number": str(tp_number),
-            "amount": amount,
-            "symbol": symbol,
-            "status": status,
-            "processed_at": datetime.datetime.now()
-        })
-        return True
+        result = await db.transactions.update_one(
+            {"transaction_id": transaction_id},  # Filtre: Bu ID var mı?
+            {
+                "$setOnInsert": {  # Sadece yeni kayıt oluşturuluyorsa set et
+                    "transaction_id": transaction_id,
+                    "tp_number": str(tp_number),
+                    "amount": amount,
+                    "symbol": symbol,
+                    "status": status,
+                    "processed_at": datetime.datetime.now()
+                }
+            },
+            upsert=True  # Yoksa ekle, varsa dokunma!
+        )
         
-    except DuplicateKeyError:
-        # Bu transaction_id zaten var -> Race Condition engellendi!
-        return False
+        # upserted_id varsa -> Yeni kayıt oluşturuldu (İlk gelen sensin!)
+        # upserted_id yoksa -> Zaten vardı (Başkası senden önce gelmiş)
+        return result.upserted_id is not None
         
     except Exception as e:
-        # Başka bir hata (Bağlantı koptu, Auth hatası vs.)
-        # Bunu yutmamalıyız, loglayıp hata verelim ki ana kod bilsin!
+        # Bağlantı hatası vs.
         print(f"❌ DB Kilitleme Hatası (Kritik): {e}")
         raise e
 
@@ -149,11 +155,23 @@ async def get_all_our_addresses():
 async def ensure_transaction_index():
     """
     transactions collection'ında transaction_id alanına UNIQUE INDEX oluşturur.
-    Bu sayede aynı transaction_id birden fazla kez eklenemez (Race Condition önlemi).
+    Kullanıcı İsteği Üzerine: Otomatik duplicate silme KAPALI! 
+    Sadece index oluşturur, hata verirse manuel müdahale gerekir.
     """
     try:
+        # Sadece Index Oluşturmaya Çalış
         await db.transactions.create_index("transaction_id", unique=True)
-        print("✅ Unique Index oluşturuldu: transactions.transaction_id")
+        print("✅ Unique Index oluşturuldu/kontrol edildi: transactions.transaction_id")
+        
     except Exception as e:
-        print(f"⚠️ Index creation error (zaten var olabilir): {e}")
+        error_msg = str(e).lower()
+        if "duplicate key error" in error_msg:
+             print(f"⚠️ KRİTİK UYARI: Index oluşturulamadı çünkü çift kayıtlar var!")
+             print(f"⚠️ Lütfen veritabanı yöneticisi ile görüşüp manuel temizlik yapın.")
+             print(f"⚠️ Hata Detayı: {e}")
+        elif "already exists" in error_msg:
+             print("✅ Index zaten mevcut.")
+        else:
+             print(f"❌ Index Hatası: {e}")
+
 

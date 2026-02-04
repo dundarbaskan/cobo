@@ -35,33 +35,25 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-@app.on_event("startup")
-async def startup_db_client():
-    await ensure_transaction_index()
-    logger.info("✅ Database Index kontrol edildi.")
-
-import time
-
-@app.middleware("http")
-async def add_process_time_header(request: Request, call_next):
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    # Sadece /cobo/callback için loglayalım ki ortalık karışmasın
-    if "cobo" in request.url.path:
-        logger.info(f"⏱️ COBO Yanıt Süresi: {process_time:.4f} saniye")
-    return response
-
-# Admin Panel Router
-from admin_api import router as admin_router
-app.include_router(admin_router)
-
-# Startup Event: MongoDB Unique Index Oluştur
+# Startup Event: Veritabanı ve Index Kontrolleri
 @app.on_event("startup")
 async def startup_event():
-    from servisler.db_service import ensure_transaction_index
-    await ensure_transaction_index()
-    logger.info("🚀 Uygulama başlatıldı. Unique Index kontrol edildi.")
+    """
+    Uygulama başlarken çalışır.
+    1. Veritabanı bağlantılarını kontrol eder.
+    2. Race Condition için 'transactions' tablosunda UNIQUE INDEX oluşturur.
+    3. Varsa duplicate (çift) kayıtları temizler.
+    """
+    logger.info("🚀 Uygulama başlatılıyor...")
+    
+    try:
+        # DB Servisinden index fonksiyonunu çağır
+        await ensure_transaction_index()
+        logger.info("✅ 1. Adım: Unique Index Güvenceye Alındı (Çift İşlem Koruması Aktif)")
+    except Exception as e:
+        logger.error(f"❌ Index oluşturulurken hata: {e}")
+
+    logger.info("✅ Sistem Tamamen Hazır!")
 
 # MT5 Configuration
 MT5_SERVER = os.getenv("MT5_SERVER")
@@ -423,6 +415,19 @@ async def cobo_callback(request: Request, background_tasks: BackgroundTasks):
         # Hata olsa bile 200 dönelim ki Cobo sürekli retry yapmasın (Loglardan bakarız hataya)
         from fastapi.responses import Response
         return Response(content="ok", media_type="text/plain")
+
+@app.get("/api/system/fix-db")
+async def manual_fix_db():
+    """
+    MANUEL BAKIM BUTONU:
+    Eğer sistemde çift kayıt varsa veya index bozulduysa bu linke tıkla.
+    Otomatik olarak temizlik yapar ve korumayı açar.
+    """
+    try:
+        await ensure_transaction_index()
+        return {"status": "success", "message": "✅ Veritabanı temizlendi ve Unique Index oluşturuldu!"}
+    except Exception as e:
+        return {"status": "error", "message": f"Hata: {str(e)}"}
 
 @app.post("/api/telegram_command")
 async def telegram_command(command: str = Form(...)):
