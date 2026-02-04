@@ -59,6 +59,8 @@ class MT5UserManager:
                 'name': getattr(user, 'Name', 'N/A'),
                 'group': getattr(user, 'Group', 'N/A'),
                 'email': getattr(user, 'Email', 'N/A'),
+                'city': getattr(user, 'City', 'N/A'),
+                'comment': getattr(user, 'Comment', 'N/A'),
                 'balance': getattr(account, 'Balance', 0) if account else 0,
                 'credit': getattr(account, 'Credit', 0) if account else 0,
                 'equity': getattr(account, 'Equity', 0) if account else 0

@@ -287,8 +287,23 @@ async def process_cobo_notification(data: dict):
                     
                     # Yatırım sayısını artır ve yorumu belirle (1=DEPOSIT, 2+=DEPOSIT-2)
                     count = await increment_deposit_count(tp_number)
-                    comment = "DEPOSIT" if count == 1 else "DEPOSIT-2"
+                    base_comment = "DEPOSIT" if count == 1 else "DEPOSIT-2"
                     
+                    # MT5'ten City ve Comment bilgilerini çek (Yatırım Uzmanı ve Referans için)
+                    city_code = "N/A"
+                    acc_comment = "N/A"
+                    
+                    if mt5_manager.connect():
+                        try:
+                            user_info = mt5_manager.get_user_info(int(tp_number))
+                            if user_info:
+                                # City kısmından baş harfleri al (Örn: Ankara -> ANK)
+                                raw_city = user_info.get('city', 'N/A')
+                                city_code = raw_city[:3].upper() if raw_city and raw_city != 'N/A' else 'N/A'
+                                acc_comment = user_info.get('comment', 'N/A')
+                        finally:
+                            mt5_manager.disconnect()
+
                     # Yeni Telegram Formatı
                     msg = (
                         f"🔥🔥💵 <b>KRİPTO YATIRIM</b> 💵🔥🔥\n"
@@ -298,7 +313,9 @@ async def process_cobo_notification(data: dict):
                         f"<b>Ağ:</b> {chain_id.lower()}\n"
                         f"<b>Miktar:</b> {formatted_amount} $\n\n"
                         f"<b>Firma Adı:</b> CEP PORTFOY\n\n"
-                        f"<b>TP NUMBER :</b> <code>{tp_number}</code>\n\n"
+                        f"<b>TP NUMBER :</b> <code>{tp_number}</code>\n"
+                        f"<b>Yatırım Uzmanı :</b> {city_code}\n"
+                        f"<b>Referans :</b> {acc_comment}\n"
                         f"<b>Toplam Yatırım:</b> {tot_dep:,.2f}\n"
                         f"<b>Toplam Çekim:</b> {tot_with:,.2f}"
                     )
@@ -308,9 +325,11 @@ async def process_cobo_notification(data: dict):
                     if mt5_manager.connect():
                         try:
                             # Tutarın float olduğundan emin ol ve MT5'e ekle
-                            success = mt5_manager.add_balance(int(tp_number), float(amount), comment)
+                            # Yeni yorum formatı: 10 USD Eklendi Yorum : DEPOSIT-2
+                            mt5_comment = f"{formatted_amount} USD Eklendi Yorum : {base_comment}"
+                            success = mt5_manager.add_balance(int(tp_number), float(amount), mt5_comment)
                             if success:
-                                mt5_res = f"✅ <b>MT5 BAKİYE EKLENDİ</b>\n👤 {name}\n💰 {formatted_amount} $ (MT5 Aktarımı Başarılı)"
+                                mt5_res = f"✅ <b>MT5 BAKİYE EKLENDİ</b>\n👤 {name}\n💰 {formatted_amount} $ (MT5 Aktarımı Başarılı)\n📝 Yorum: {mt5_comment}"
                                 send_telegram_msg(mt5_res)
                             else:
                                 send_telegram_msg(f"❌ <b>MT5 HATA</b>\n👤 {name}\n🔑 {tp_number}\n⚠️ Bakiye eklenemedi!")
