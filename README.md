@@ -15,27 +15,40 @@ Bu proje, Cobo WaaS (Wallet as a Service) API'si ile entegre çalışarak kripto
 
 ```mermaid
 graph TD
-    User((Yatırımcı)) -->|1. Cüzdan İsteği| Web[Web Paneli (index.html)]
-    Web -->|2. API (Create Wallet)| API[FastAPI (main.py)]
-    API -->|3. Adres Al| Cobo[Cobo WaaS API]
-    Cobo -->|4. Yeni Adres| API
-    API -->|5. QR Kod| Web
+    %% Stil Tanımlamaları
+    classDef user fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef external fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef server fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+    classDef database fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px;
+    classDef danger fill:#ffcdd2,stroke:#c62828,stroke-width:2px;
 
-    User -->|6. Kripto Transferi| Cobo
-    Cobo -->|7. Webhook (Deposit)| API
-    
-    subgraph "Backend Sunucusu (PM2 Managed)"
-        API
-        Worker[MT5 Worker (mt5_worker.py)]
+    User((Yatırımcı)):::user -->|1. Cüzdan İsteği| Web[Web Paneli / index.html]
+    Web -->|2. POST /api/create_wallet| API[FastAPI / main.py]:::server
+    API -->|3. Get Address| Cobo[Cobo WaaS API]:::external
+    Cobo -->|4. LTC/BTC Adresi| API
+    API -->|5. Adres & QR| Web
+
+    User -->|6. Kripto Gönderimi| Network[Blockchain Ağı]:::external
+    Network --> Cobo
+    Cobo -->|7. Webhook /cobo/callback| API
+
+    subgraph "FastAPI Güvenlik & Hız Katmanı"
+        API -->|8. İmza Doğrulama| SignCheck{İmza Geçerli mi?}
+        SignCheck -->|Hayır| Reject[401 Unauthorized]:::danger
+        SignCheck -->|Evet| Background[Background Task Başlat]
+        Background -->|9. ANINDA CEVAP| CoboResponse[200 OK / Eyvallah]
     end
 
-    API -->|8. Atomik Kilit (Try Lock)| DB[(MongoDB)]
-    
-    alt Kilit Başarılı
-        API -->|9. Bakiye Ekle| MT5[MetaTrader 5]
-        API -->|10. Bildirim| TG[Telegram Bot]
-    else Kilit Başarısız (Duplicate)
-        API -->|X. İşlemi Yoksay| Log[Log Kaydı]
+    subgraph "Arka Plan İşleme (Async Worker)"
+        Background -->|10. Idempotency Check| DB[(MongoDB)]:::database
+        DB -->|Unique Event ID Kontrolü| LockCheck{Zaten İşlendi mi?}
+        
+        LockCheck -->|Evet| Ignore[Logla & Çık]:::danger
+        LockCheck -->|Hayır| Process[Bakiyeyi Onayla]
+        
+        Process -->|11. Credit Deposit| MT5[MetaTrader 5 API]:::server
+        Process -->|12. Başarılı İşlem| DB
+        Process -->|13. Bilgilendirme| TG[Telegram Bot]:::external
     end
 ```
 
