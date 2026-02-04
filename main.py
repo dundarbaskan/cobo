@@ -151,11 +151,12 @@ async def create_wallet(tp_number: str = Form(...), chain_id: str = Form(...), a
     except Exception as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
 
-@app.post("/cobo/callback")
-async def cobo_callback(request: Request):
+async def process_cobo_notification(data: dict):
+    """
+    Cobo webhook bildirimlerini arka planda işleyen asenkron fonksiyon
+    """
     try:
-        data = await request.json()
-        logger.info(f"📥 Webhook alındı: {json.dumps(data, indent=2)}")
+        logger.info(f"🔄 Arka plan işlemi başlatıldı: {data.get('event_id', 'unknown')}")
         
         # Cobo uses 'type' not 'event_type'
         event_type = data.get("type") or data.get("event_type")
@@ -188,7 +189,7 @@ async def cobo_callback(request: Request):
                     
                     msg = (
                         f"🆕 <b>CÜZDAN OLUŞTURULDU</b>\n\n"
-                        f"👤 <b>Müşteri:</b> {name}\n"
+                        f"👤 <b>Müşter:</b> {name}\n"
                         f"🔑 <b>TP:</b> <code>{tp}</code>\n"
                         f"💵 <b>Varlık:</b> {asset}\n"
                         f"🌐 <b>Ağ:</b> {display_chain}\n"
@@ -216,7 +217,7 @@ async def cobo_callback(request: Request):
             tx_type = tx.get("type", "").upper()
             
             if not address:
-                return {"status": "ok"}
+                return
             
             # ÇOK SIKI FİLTRE: Sadece gerçek müşteri yatırımları
             # 1. Tip kontrolü - Sadece DEPOSIT kabul et, diğer HER ŞEYİ engelle
@@ -225,7 +226,7 @@ async def cobo_callback(request: Request):
             
             if tx_type in BLOCKED_TYPES or tx_type not in ["DEPOSIT", "RECEIVE"]:
                 logger.info(f"⏭️ Engellenen işlem tipi: {tx_type} - {transaction_id}")
-                return {"status": "ok"}
+                return
 
             # 2. Gerçek coin kontrolü - Sadece bilinen coinleri kabul et, fake tokenları engelle
             ALLOWED_TOKENS = ["USDT", "USDC", "TRX", "ETH", "BTC", "LTC", "SOL", "MATIC", "BNB", "XRP", "ADA", "DOT"]
@@ -239,12 +240,12 @@ async def cobo_callback(request: Request):
             
             if not is_allowed:
                 logger.info(f"⏭️ Fake/Spam token engellendi: {symbol} - {transaction_id}")
-                return {"status": "ok"}
+                return
                 
             # 3. Minimum tutar kontrolü - 1 USDT/USD değeri altını engelle
             if amount < 1.0:
                 logger.info(f"⏭️ 1 USD altı miktar engellendi: {amount} {symbol} - {transaction_id}")
-                return {"status": "ok"}
+                return
             
             # 4. Sweep/birleştirme kontrolü - from_address bizim cüzdanlarımızdan biriyse engelle
             # (İç transferleri tespit et)
@@ -253,13 +254,13 @@ async def cobo_callback(request: Request):
                 our_addresses = await get_all_our_addresses()
                 if from_address in our_addresses:
                     logger.info(f"⏭️ İç transfer engellendi (sweep/consolidation): {transaction_id}")
-                    return {"status": "ok"}
+                    return
 
             # Mükerrer işlem kontrolü (Sadece Success durumunda bakıyoruz ki Onay mesajları gidebilsin)
             if status in ["COMPLETED", "SUCCESS", "CONFIRMED"]:
                 if await is_transaction_processed(transaction_id):
                     logger.info(f"⏭️ İşlem zaten işlenmiş: {transaction_id}")
-                    return {"status": "ok"}
+                    return
 
             lead = await get_lead_by_address(address)
             if lead:
@@ -272,7 +273,7 @@ async def cobo_callback(request: Request):
                 # ONAY BEKLENİYOR - SADECE LOGLA, TELEGRAM ATMA
                 if status == "CONFIRMING":
                     logger.info(f"⏳ Ödeme tespit edildi (Onay bekleniyor): {transaction_id}")
-                    return {"status": "ok"}
+                    return
 
                 # TAMAMLANDI (Aktarım Yap)
                 elif status in ["COMPLETED", "SUCCESS", "CONFIRMED"]:
@@ -320,12 +321,30 @@ async def cobo_callback(request: Request):
                     send_telegram_msg(f"⚠️ <b>BİLİNMEYEN ADRESE ÖDEME</b>\n💵 {amount} {symbol}\n📍 {address}")
         else:
             logger.info(f"ℹ️ Diğer event type: {event_type}")
-            
-        return {"status": "ok"}
+
     except Exception as e:
-        logger.error(f"❌ Callback hatası: {e}")
+        logger.error(f"❌ Arka plan işlem hatası: {e}")
         import traceback
         traceback.print_exc()
+
+@app.post("/cobo/callback")
+async def cobo_callback(request: Request, background_tasks: BackgroundTasks):
+    """
+    Cobo webhook endpoint'i.
+    Hızla 200 OK döner, işlemi background'a atar.
+    """
+    try:
+        # JSON verisini hemen oku
+        data = await request.json()
+        logger.info(f"📥 Webhook alındı (Queue'ya eklendi): {data.get('event_id', 'unknown')}")
+        
+        # Ağır işlemi arka plana at
+        background_tasks.add_task(process_cobo_notification, data)
+        
+        # Cobo'ya hemen "Tamam" de
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"❌ Webhook karşılama hatası: {e}")
         return {"status": "error", "message": str(e)}
 
 @app.post("/api/telegram_command")
