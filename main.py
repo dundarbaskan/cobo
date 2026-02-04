@@ -17,7 +17,7 @@ from cobo_waas2 import ApiClient, Configuration, CreateAddressRequest
 from servisler.db_service import (
     get_lead_by_tp, save_wallet_to_lead, get_lead_by_address, 
     increment_deposit_count, get_existing_wallet, 
-    is_transaction_processed, log_transaction, update_financial_stats,
+    try_lock_transaction, ensure_transaction_index, update_financial_stats,
     get_all_our_addresses
 )
 from servisler.mt5service import MT5UserManager
@@ -30,6 +30,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+@app.on_event("startup")
+async def startup_db_client():
+    await ensure_transaction_index()
+    logger.info("✅ Database Index kontrol edildi.")
 
 import time
 
@@ -270,28 +275,29 @@ async def process_cobo_notification(data: dict):
 
             # Mükerrer işlem kontrolü (Sadece Success durumunda bakıyoruz ki Onay mesajları gidebilsin)
             if status in ["COMPLETED", "SUCCESS", "CONFIRMED"]:
-                if await is_transaction_processed(transaction_id):
-                    logger.info(f"⏭️ İşlem zaten işlenmiş: {transaction_id}")
+                # ATOMİK KİLİT MEKANİZMASI 🔒
+                # Burada işlem veritabanına kaydedilmeye çalışılır.
+                # Eğer zaten varsa False döner ve if bloğuna girmez -> Mükerrer önlenir.
+                is_locked = await try_lock_transaction(transaction_id, tp_number, amount, symbol, status)
+                
+                if not is_locked:
+                    logger.info(f"⏭️ İşlem zaten işlenmiş (Race Condition Önlemi): {transaction_id}")
                     return
 
-            lead = await get_lead_by_address(address)
-            if lead:
-                tp_number = lead.get("tp_number")
-                name = lead.get("name", "Bilinmeyen")
-                
-                # Miktar Formatlama (1.545,07 $)
-                formatted_amount = "{:,.2f}".format(amount).replace(",", "X").replace(".", ",").replace("X", ".")
-                
-                # ONAY BEKLENİYOR - SADECE LOGLA, TELEGRAM ATMA
-                if status == "CONFIRMING":
-                    logger.info(f"⏳ Ödeme tespit edildi (Onay bekleniyor): {transaction_id}")
-                    return
-
-                # TAMAMLANDI (Aktarım Yap)
-                elif status in ["COMPLETED", "SUCCESS", "CONFIRMED"]:
-                    # Islem daha önce işlenmediyse devam et
-                    await log_transaction(transaction_id, tp_number, amount, symbol, status)
+                lead = await get_lead_by_address(address)
+                if lead:
+                    tp_number = lead.get("tp_number")
+                    name = lead.get("name", "Bilinmeyen")
                     
+                    # Miktar Formatlama (1.545,07 $)
+                    formatted_amount = "{:,.2f}".format(amount).replace(",", "X").replace(".", ",").replace("X", ".")
+                    
+                    # ONAY BEKLENİYOR - SADECE LOGLA, TELEGRAM ATMA
+                    if status == "CONFIRMING":
+                        logger.info(f"⏳ Ödeme tespit edildi (Onay bekleniyor): {transaction_id}")
+                        return
+
+                    # TAMAMLANDI (Aktarım Yap)
                     # Finansal istatistikleri güncelle
                     updated_lead = await update_financial_stats(tp_number, amount, is_deposit=True)
                     tot_dep = updated_lead.get("total_deposit", 0)
@@ -372,11 +378,15 @@ async def cobo_callback(request: Request, background_tasks: BackgroundTasks):
         # Ağır işlemi arka plana at
         background_tasks.add_task(process_cobo_notification, data)
         
-        # Cobo'ya hemen "Tamam" de
-        return {"status": "ok"}
+        # Cobo'ya hemen "ok" (plain text) dön
+        from fastapi.responses import Response
+        return Response(content="ok", media_type="text/plain")
+
     except Exception as e:
         logger.error(f"❌ Webhook karşılama hatası: {e}")
-        return {"status": "error", "message": str(e)}
+        # Hata olsa bile 200 dönelim ki Cobo sürekli retry yapmasın (Loglardan bakarız hataya)
+        from fastapi.responses import Response
+        return Response(content="ok", media_type="text/plain")
 
 @app.post("/api/telegram_command")
 async def telegram_command(command: str = Form(...)):

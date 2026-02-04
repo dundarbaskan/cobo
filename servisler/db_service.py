@@ -71,20 +71,44 @@ async def get_existing_wallet(tp_number, asset_name, chain_id):
                 return wallet
     return None
 
+async def ensure_transaction_index():
+    """Transaction ID üzerinde benzersiz index oluşturur."""
+    try:
+        await db.transactions.create_index("transaction_id", unique=True)
+    except Exception as e:
+        print(f"Index creation error: {e}")
+
+# İlk importta index'i garantiye al (Async olduğu için event loop içinde çağrılmalı, 
+# ama şimdilik save anında kontrol edeceğiz veya main startup'ta)
+
+async def try_lock_transaction(transaction_id, tp_number, amount, symbol, status):
+    """
+    Atomik işlem kilidi. 
+    Eğer işlem daha önce kaydedildiyse False döner (Duplicate Error).
+    Eğer ilk kez geliyorsa kaydeder ve True döner.
+    """
+    try:
+        await db.transactions.insert_one({
+            "transaction_id": transaction_id,
+            "tp_number": str(tp_number),
+            "amount": amount,
+            "symbol": symbol,
+            "status": status,
+            "processed_at": datetime.datetime.now()
+        })
+        return True
+    except Exception:
+        # DuplicateKeyError veya başka bir hata -> kilitlenemedi, zaten var
+        return False
+
+# Geriye uyumluluk veya sadece kontrol amaçlı (Artık ana logic'te try_lock kullanılmalı)
 async def is_transaction_processed(transaction_id):
-    """İşlemin daha önce işlenip işlenmediğini kontrol eder."""
     res = await db.transactions.find_one({"transaction_id": transaction_id})
     return res is not None
 
 async def log_transaction(transaction_id, tp_number, amount, symbol, status):
-    """İşlemi kaydederek mükerrerliği önler."""
-    await db.transactions.insert_one({
-        "transaction_id": transaction_id,
-        "tp_number": str(tp_number),
-        "amount": amount,
-        "symbol": symbol,
-        "status": status
-    })
+    """(Deprecated) Artık try_lock_transaction kullanılmalı"""
+    await try_lock_transaction(transaction_id, tp_number, amount, symbol, status)
 
 async def update_financial_stats(tp_number, amount, is_deposit=True):
     """Kullanıcının toplam yatırım/çekim bilgisini günceller."""
