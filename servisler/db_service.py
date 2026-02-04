@@ -146,3 +146,14 @@ async def get_all_our_addresses():
                     addresses.add(wallet["address"])
     return addresses
 
+async def ensure_transaction_index():
+    """
+    transactions collection'ında transaction_id alanına UNIQUE INDEX oluşturur.
+    Bu sayede aynı transaction_id birden fazla kez eklenemez (Race Condition önlemi).
+    """
+    try:
+        await db.transactions.create_index("transaction_id", unique=True)
+        print("✅ Unique Index oluşturuldu: transactions.transaction_id")
+    except Exception as e:
+        print(f"⚠️ Index creation error (zaten var olabilir): {e}")
+

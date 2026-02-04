@@ -56,6 +56,12 @@ async def add_process_time_header(request: Request, call_next):
 from admin_api import router as admin_router
 app.include_router(admin_router)
 
+# Startup Event: MongoDB Unique Index Oluştur
+@app.on_event("startup")
+async def startup_event():
+    from servisler.db_service import ensure_transaction_index
+    await ensure_transaction_index()
+    logger.info("🚀 Uygulama başlatıldı. Unique Index kontrol edildi.")
 
 # MT5 Configuration
 MT5_SERVER = os.getenv("MT5_SERVER")
