@@ -343,8 +343,8 @@ async def process_cobo_notification(data: dict):
                     if mt5_manager.connect():
                         try:
                             # Tutarın float olduğundan emin ol ve MT5'e ekle
-                            # Yeni yorum formatı: 10 USD Eklendi Yorum : DEPOSIT-2
-                            mt5_comment = f"{formatted_amount} USD Eklendi Yorum : {base_comment}"
+                            # MT5'e sadece DEPOSIT veya DEPOSIT-2 yorumunu gönder
+                            mt5_comment = base_comment
                             success = mt5_manager.add_balance(int(tp_number), float(amount), mt5_comment)
                             if success:
                                 mt5_res = f"✅ <b>MT5 BAKİYE EKLENDİ</b>\n👤 {name}\n💰 {formatted_amount} $ (MT5 Aktarımı Başarılı)\n📝 Yorum: {mt5_comment}"
