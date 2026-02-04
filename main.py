@@ -99,16 +99,7 @@ async def home():
     with open("index.html", "r", encoding="utf-8") as f:
         return f.read()
 
-@app.get("/test_env")
-async def test_env():
-    return {
-        "status": "active",
-        "cobo_key": "VAR" if os.getenv("COBO_API_KEY") else "YOK ❌",
-        "mt5_server": os.getenv("MT5_SERVER", "YOK ❌"),
-        "cwd": os.getcwd(),
-        "env_path_code": str(Path(__file__).parent / '.env'),
-        "env_exists": (Path(__file__).parent / '.env').exists()
-    }
+
 
 @app.post("/api/verify_tp")
 async def verify_tp(tp_number: str = Form(...)):
@@ -298,88 +289,103 @@ async def process_cobo_notification(data: dict):
                     return
 
             # Mükerrer işlem kontrolü (Sadece Success durumunda bakıyoruz ki Onay mesajları gidebilsin)
+            # Mükerrer işlem kontrolü (Sadece Success durumunda bakıyoruz ki Onay mesajları gidebilsin)
             if status in ["COMPLETED", "SUCCESS", "CONFIRMED"]:
+                
+                # Önce müşteriyi bul (TP Number lazım)
+                lead = await get_lead_by_address(address)
+                if not lead:
+                     # Müşteri yoksa zaten işleyemeyiz
+                     logger.warning(f"⚠️ Bilinmeyen adrese deposit: {address} - Tx: {transaction_id}")
+                     send_telegram_msg(f"⚠️ <b>BİLİNMEYEN ADRESE ÖDEME</b>\n💵 {amount} {symbol}\n📍 {address}")
+                     return
+
+                tp_number = lead.get("tp_number")
+                name = lead.get("name", "Bilinmeyen")
+                
                 # ATOMİK KİLİT MEKANİZMASI 🔒
-                # Burada işlem veritabanına kaydedilmeye çalışılır.
-                # Eğer zaten varsa False döner ve if bloğuna girmez -> Mükerrer önlenir.
+                # TP Number'ı bulduktan sonra kilitlemeyi dene
                 is_locked = await try_lock_transaction(transaction_id, tp_number, amount, symbol, status)
                 
                 if not is_locked:
                     logger.info(f"⏭️ İşlem zaten işlenmiş (Race Condition Önlemi): {transaction_id}")
                     return
 
-                lead = await get_lead_by_address(address)
-                if lead:
-                    tp_number = lead.get("tp_number")
-                    name = lead.get("name", "Bilinmeyen")
-                    
-                    # Miktar Formatlama (1.545,07 $)
-                    formatted_amount = "{:,.2f}".format(amount).replace(",", "X").replace(".", ",").replace("X", ".")
-                    
-                    # ONAY BEKLENİYOR - SADECE LOGLA, TELEGRAM ATMA
-                    if status == "CONFIRMING":
-                        logger.info(f"⏳ Ödeme tespit edildi (Onay bekleniyor): {transaction_id}")
-                        return
+                # Miktar Formatlama (1.545,07 $)
+                formatted_amount = "{:,.2f}".format(amount).replace(",", "X").replace(".", ",").replace("X", ".")
+                
+                # ONAY BEKLENİYOR - SADECE LOGLA, TELEGRAM ATMA
+                if status == "CONFIRMING":
+                    logger.info(f"⏳ Ödeme tespit edildi (Onay bekleniyor): {transaction_id}")
+                    return
 
-                    # TAMAMLANDI (Aktarım Yap)
-                    # Finansal istatistikleri güncelle
-                    updated_lead = await update_financial_stats(tp_number, amount, is_deposit=True)
-                    tot_dep = updated_lead.get("total_deposit", 0)
-                    tot_with = updated_lead.get("total_withdrawal", 0)
-                    
-                    # Yatırım sayısını artır ve yorumu belirle (1=DEPOSIT, 2+=DEPOSIT-2)
-                    count = await increment_deposit_count(tp_number)
-                    base_comment = "DEPOSIT" if count == 1 else "DEPOSIT-2"
-                    
-                    # MT5'ten City ve Comment bilgilerini çek (Yatırım Uzmanı ve Referans için)
-                    city_code = "N/A"
-                    acc_comment = "N/A"
-                    
-                    if mt5_manager.connect():
-                        try:
-                            user_info = mt5_manager.get_user_info(int(tp_number))
-                            if user_info:
-                                # City kısmından baş harfleri al (Örn: Ankara -> ANK)
-                                raw_city = user_info.get('city', 'N/A')
-                                city_code = raw_city[:3].upper() if raw_city and raw_city != 'N/A' else 'N/A'
-                                acc_comment = user_info.get('comment', 'N/A')
-                        finally:
-                            mt5_manager.disconnect()
+                # TAMAMLANDI (Aktarım Yap)
+                # Finansal istatistikleri güncelle
+                updated_lead = await update_financial_stats(tp_number, amount, is_deposit=True)
+                tot_dep = updated_lead.get("total_deposit", 0)
+                tot_with = updated_lead.get("total_withdrawal", 0)
+                
+                # Yatırım sayısını artır ve yorumu belirle (1=DEPOSIT, 2+=DEPOSIT-2)
+                count = await increment_deposit_count(tp_number)
+                base_comment = "DEPOSIT" if count == 1 else "DEPOSIT-2"
+                
+                # MT5'ten City ve Comment bilgilerini çek (Yatırım Uzmanı ve Referans için)
+                city_code = "N/A"
+                acc_comment = "N/A"
+                
+                if mt5_manager.connect():
+                    try:
+                        user_info = mt5_manager.get_user_info(int(tp_number))
+                        if user_info:
+                            # City kısmından baş harfleri al (Örn: Ankara -> ANK)
+                            raw_city = user_info.get('city', 'N/A')
+                            city_code = raw_city[:3].upper() if raw_city and raw_city != 'N/A' else 'N/A'
+                            acc_comment = user_info.get('comment', 'N/A')
+                    finally:
+                        mt5_manager.disconnect()
 
-                    # Yeni Telegram Formatı
-                    msg = (
-                        f"🔥🔥💵 <b>KRİPTO YATIRIM</b> 💵🔥🔥\n"
-                        f"MOBİL UYGULAMA\n\n"
-                        f"<b>Ad Soyad:</b> {name.upper()}\n"
-                        f"<b>Coin:</b> {symbol.lower()}\n"
-                        f"<b>Ağ:</b> {chain_id.lower()}\n"
-                        f"<b>Miktar:</b> {formatted_amount} $\n\n"
-                        f"<b>Firma Adı:</b> CEP PORTFOY\n\n"
-                        f"<b>TP NUMBER :</b> <code>{tp_number}</code>\n"
-                        f"<b>Yatırım Uzmanı :</b> {city_code}\n"
-                        f"<b>Referans :</b> {acc_comment}\n"
-                        f"<b>Toplam Yatırım:</b> {tot_dep:,.2f}\n"
-                        f"<b>Toplam Çekim:</b> {tot_with:,.2f}"
-                    )
-                    send_telegram_msg(msg)
-                    
-                    # MT5'e bakiye ekle
-                    if mt5_manager.connect():
-                        try:
-                            # Tutarın float olduğundan emin ol ve MT5'e ekle
-                            # MT5'e sadece DEPOSIT veya DEPOSIT-2 yorumunu gönder
-                            mt5_comment = base_comment
-                            success = mt5_manager.add_balance(int(tp_number), float(amount), mt5_comment)
-                            if success:
-                                mt5_res = f"✅ <b>MT5 BAKİYE EKLENDİ</b>\n👤 {name}\n💰 {formatted_amount} $ (MT5 Aktarımı Başarılı)\n📝 Yorum: {mt5_comment}"
-                                send_telegram_msg(mt5_res)
-                            else:
-                                send_telegram_msg(f"❌ <b>MT5 HATA</b>\n👤 {name}\n🔑 {tp_number}\n⚠️ Bakiye eklenemedi!")
-                        finally:
-                            mt5_manager.disconnect()
-            else:
-                if status in ["COMPLETED", "SUCCESS", "CONFIRMED"]:
-                    send_telegram_msg(f"⚠️ <b>BİLİNMEYEN ADRESE ÖDEME</b>\n💵 {amount} {symbol}\n📍 {address}")
+                # Yeni Telegram Formatı
+                msg = (
+                    f"🔥🔥💵 <b>KRİPTO YATIRIM</b> 💵🔥🔥\n"
+                    f"MOBİL UYGULAMA\n\n"
+                    f"<b>Ad Soyad:</b> {name.upper()}\n"
+                    f"<b>Coin:</b> {symbol.lower()}\n"
+                    f"<b>Ağ:</b> {chain_id.lower()}\n"
+                    f"<b>Miktar:</b> {formatted_amount} $\n\n"
+                    f"<b>Firma Adı:</b> CEP PORTFOY\n\n"
+                    f"<b>TP NUMBER :</b> <code>{tp_number}</code>\n"
+                    f"<b>Yatırım Uzmanı :</b> {city_code}\n"
+                    f"<b>Referans :</b> {acc_comment}\n"
+                    f"<b>Toplam Yatırım:</b> {tot_dep:,.2f}\n"
+                    f"<b>Toplam Çekim:</b> {tot_with:,.2f}"
+                )
+                send_telegram_msg(msg)
+                
+                # MT5'e bakiye ekle
+                # MT5'e bakiye ekle
+                if mt5_manager.connect():
+                    try:
+                        # Tutarın float olduğundan emin ol (Kripto hassasiyeti için yuvarlama YAPILMAZ)
+                        # final_amount = round(float(amount), 2) -> İPTAL (BTC gibi değerli coinler için sakıncalı)
+                        
+                        # MT5'e sadece DEPOSIT veya DEPOSIT-2 yorumunu gönder
+                        mt5_comment = base_comment
+                        success = mt5_manager.add_balance(int(tp_number), float(amount), mt5_comment)
+                        if success:
+                            mt5_res = f"✅ <b>MT5 BAKİYE EKLENDİ</b>\n👤 {name}\n💰 {formatted_amount} $ (MT5 Aktarımı Başarılı)\n📝 Yorum: {mt5_comment}"
+                            send_telegram_msg(mt5_res)
+                        else:
+                            send_telegram_msg(f"❌ <b>MT5 İŞLEM HATASI</b>\n👤 {name}\n🔑 {tp_number}\n⚠️ Bakiye eklenemedi (Add Balance False)!")
+                    except Exception as e:
+                        logger.error(f"MT5 Exception: {e}")
+                        send_telegram_msg(f"❌ <b>MT5 KOD HATASI</b>\n👤 {name}\n⚠️ Hata: {str(e)}")
+                    finally:
+                        mt5_manager.disconnect()
+                else:
+                    # MT5 Bağlantısı Kurulamazsa
+                    logger.error("MT5 Bağlantısı Başarısız!")
+                    send_telegram_msg(f"🚨 <b>KRİTİK HATA: MT5 BAĞLANAMADI</b>\n👤 {name}\n💰 {formatted_amount} $\n⚠️ Para veritabanına işlendi ama MT5'e GEÇMEDİ! Manuel kontrol gerekli.")
+
         else:
             logger.info(f"ℹ️ Diğer event type: {event_type}")
 
