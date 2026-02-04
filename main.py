@@ -99,6 +99,17 @@ async def home():
     with open("index.html", "r", encoding="utf-8") as f:
         return f.read()
 
+@app.get("/test_env")
+async def test_env():
+    return {
+        "status": "active",
+        "cobo_key": "VAR" if os.getenv("COBO_API_KEY") else "YOK ❌",
+        "mt5_server": os.getenv("MT5_SERVER", "YOK ❌"),
+        "cwd": os.getcwd(),
+        "env_path_code": str(Path(__file__).parent / '.env'),
+        "env_exists": (Path(__file__).parent / '.env').exists()
+    }
+
 @app.post("/api/verify_tp")
 async def verify_tp(tp_number: str = Form(...)):
     lead = await get_lead_by_tp(tp_number)
