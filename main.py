@@ -31,6 +31,18 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+import time
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    # Sadece /cobo/callback için loglayalım ki ortalık karışmasın
+    if "cobo" in request.url.path:
+        logger.info(f"⏱️ COBO Yanıt Süresi: {process_time:.4f} saniye")
+    return response
+
 # Admin Panel Router
 from admin_api import router as admin_router
 app.include_router(admin_router)
