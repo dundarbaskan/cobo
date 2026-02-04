@@ -6,7 +6,11 @@ from servisler.mt5service import MT5UserManager
 from servisler.db_service import save_lead, get_lead_by_tp
 from dotenv import load_dotenv
 
-load_dotenv()
+from pathlib import Path
+
+# .env dosyasını garantiye al
+env_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

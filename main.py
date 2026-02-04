@@ -23,7 +23,11 @@ from servisler.db_service import (
 from servisler.mt5service import MT5UserManager
 from servisler.sweep_service import CoboSweepService
 
-load_dotenv()
+from pathlib import Path
+
+# .env dosyasını tam yol ile yükle (PM2 uyumluluğu için)
+env_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # Logging setup
 logging.basicConfig(level=logging.INFO)
