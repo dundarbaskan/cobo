@@ -152,10 +152,16 @@ async def create_wallet(tp_number: str = Form(...), chain_id: str = Form(...), a
         }
 
     try:
+        import certifi  # SSL Sertifikası için gerekli
+        
         configuration = Configuration(
             api_private_key=os.getenv("COBO_API_SECRET"),
             host="https://api.cobo.com/v2"
         )
+        
+        # Windows SSL Hatası Çözümü:
+        configuration.ssl_ca_cert = certifi.where()
+        configuration.verify_ssl = True
         
         with ApiClient(configuration) as api_client:
             # Set API Key header
