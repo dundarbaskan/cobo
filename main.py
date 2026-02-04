@@ -231,7 +231,7 @@ async def process_cobo_notification(data: dict):
                     logger.info(f"✅ Cüzdan bildirimi: {name} (TP: {tp}) - {asset} {chain}")
         
         # Transaction events
-        elif event_type in ["TRANSACTION", "transaction.created", "wallets.transaction.created", "wallets.transaction.updated", "wallets.transaction.succeeded", "wallets.transactions.created", "wallets.transactions.updated"]:
+        elif event_type in ["TRANSACTION", "transaction.created", "transaction.deposit", "transaction.success", "wallets.transaction.created", "wallets.transaction.updated", "wallets.transaction.succeeded", "wallets.transactions.created", "wallets.transactions.updated"]:
             tx = data.get("data", {})
             if "transaction" in tx:
                 tx = tx["transaction"]
