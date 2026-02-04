@@ -85,6 +85,8 @@ async def ensure_transaction_index():
 # İlk importta index'i garantiye al (Async olduğu için event loop içinde çağrılmalı, 
 # ama şimdilik save anında kontrol edeceğiz veya main startup'ta)
 
+from pymongo.errors import DuplicateKeyError
+
 async def try_lock_transaction(transaction_id, tp_number, amount, symbol, status):
     """
     Atomik işlem kilidi. 
@@ -101,9 +103,16 @@ async def try_lock_transaction(transaction_id, tp_number, amount, symbol, status
             "processed_at": datetime.datetime.now()
         })
         return True
-    except Exception:
-        # DuplicateKeyError veya başka bir hata -> kilitlenemedi, zaten var
+        
+    except DuplicateKeyError:
+        # Bu transaction_id zaten var -> Race Condition engellendi!
         return False
+        
+    except Exception as e:
+        # Başka bir hata (Bağlantı koptu, Auth hatası vs.)
+        # Bunu yutmamalıyız, loglayıp hata verelim ki ana kod bilsin!
+        print(f"❌ DB Kilitleme Hatası (Kritik): {e}")
+        raise e
 
 # Geriye uyumluluk veya sadece kontrol amaçlı (Artık ana logic'te try_lock kullanılmalı)
 async def is_transaction_processed(transaction_id):
