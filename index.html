@@ -540,6 +540,14 @@
             const tp = document.getElementById('tp-input').value;
             if (!tp) return Swal.fire('Hata', 'Lütfen TP numaranızı girin.', 'error');
 
+            // Loading Başlat
+            Swal.fire({
+                title: 'Kontrol Ediliyor...',
+                html: 'Lütfen bekleyiniz, hesap bilgileriniz kontrol ediliyor.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading() }
+            });
+
             const formData = new FormData();
             formData.append('tp_number', tp);
 
@@ -548,14 +556,16 @@
                 const data = await res.json();
 
                 if (data.status === 'success') {
+                    Swal.close(); // Loading'i kapat
+
                     currentTP = tp;
                     document.getElementById('welcome-msg').innerText = `Hoşgeldin, ${data.name}`;
 
                     // MT5 İstatistiklerini Güncelle
                     if (data.mt5) {
-                        document.getElementById('stat-balance').innerText = `$${parseFloat(data.mt5.balance).toLocaleString()}`;
-                        document.getElementById('stat-equity').innerText = `$${parseFloat(data.mt5.equity).toLocaleString()}`;
-                        document.getElementById('stat-credit').innerText = `$${parseFloat(data.mt5.credit).toLocaleString()}`;
+                        document.getElementById('stat-balance').innerText = `$${parseFloat(data.mt5.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        document.getElementById('stat-equity').innerText = `$${parseFloat(data.mt5.equity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        document.getElementById('stat-credit').innerText = `$${parseFloat(data.mt5.credit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
                         if (data.last_sync) {
                             const date = new Date(data.last_sync * 1000);
@@ -565,10 +575,16 @@
 
                     showStep('step-asset');
                 } else {
-                    Swal.fire('Hata', data.message, 'error');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Bulunamadı',
+                        text: data.message,
+                        confirmButtonText: 'Tekrar Dene'
+                    });
                 }
             } catch (e) {
-                Swal.fire('Hata', 'Sistem hatası oluştu.', 'error');
+                console.error(e);
+                Swal.fire('Hata', 'Sunucu ile iletişim kurulamadı. Lütfen internet bağlantınızı kontrol edin.', 'error');
             }
         }
 
