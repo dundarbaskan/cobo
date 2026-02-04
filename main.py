@@ -181,6 +181,9 @@ async def create_wallet(tp_number: str = Form(...), chain_id: str = Form(...), a
             return {"address": new_address, "qr_code": qr_base64}
             
     except Exception as e:
+        logger.error(f"❌ Cüzdan Oluşturma Hatası (TP: {tp_number}): {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return JSONResponse(status_code=400, content={"error": str(e)})
 
 async def process_cobo_notification(data: dict):
