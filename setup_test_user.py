@@ -4,21 +4,16 @@ TP: 999999
 Test adresi: TEST_ADDRESS_999999
 """
 import asyncio
-import os
+import sys
 from pathlib import Path
-from dotenv import load_dotenv
-from motor.motor_asyncio import AsyncIOMotorClient
 
-# .env dosyasını yükle
-load_dotenv(Path(__file__).parent / '.env')
+# Servisler klasörünü import path'e ekle
+sys.path.insert(0, str(Path(__file__).parent))
 
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-DB_NAME = "cobo_system"
+# db_service'teki hazır DB bağlantısını kullan
+from servisler.db_service import db
 
 async def setup_test_user():
-    client = AsyncIOMotorClient(MONGODB_URL)
-    db = client[DB_NAME]
-    
     test_user = {
         "tp_number": "999999",
         "name": "Test Kullanıcısı (Race Condition)",
@@ -35,16 +30,16 @@ async def setup_test_user():
     }
     
     # Eğer zaten varsa sil, temiz başla
-    await db.leads.delete_many({"tp_number": "999999"})
+    result = await db.leads.delete_many({"tp_number": "999999"})
+    if result.deleted_count > 0:
+        print(f"🗑️ Eski test kullanıcısı silindi ({result.deleted_count} kayıt)")
     
     # Ekle
     result = await db.leads.insert_one(test_user)
     print(f"✅ Test kullanıcısı eklendi: {result.inserted_id}")
     print(f"👤 TP Number: 999999")
     print(f"📍 Test Adresi: TEST_ADDRESS_999999")
-    print(f"\nArtık 'python test_race.py' ile test edebilirsin!")
-    
-    client.close()
+    print(f"\n🚀 Artık 'python test_race.py' ile test edebilirsin!")
 
 if __name__ == "__main__":
     asyncio.run(setup_test_user())
