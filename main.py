@@ -22,6 +22,7 @@ from servisler.db_service import (
 )
 from servisler.mt5service import MT5UserManager
 from servisler.sweep_service import CoboSweepService
+from core.currency.converter.converter import coin_parser
 
 from pathlib import Path
 
@@ -303,6 +304,27 @@ async def process_cobo_notification(data: dict):
                 
                 # ATOMİK KİLİT MEKANİZMASI 🔒
                 # TP Number'ı bulduktan sonra kilitlemeyi dene
+                
+                # --- CURRENCY CONVERTER INTEGRATION ---
+                try:
+                    # Blocking request'i executor'da çalıştır (Async yapıyı bozmamak için)
+                    loop = asyncio.get_event_loop()
+                    cv_data = await loop.run_in_executor(None, coin_parser, symbol, amount)
+                    
+                    # 2. eleman her zaman USD'dir (converter.py yapısına göre)
+                    # Örn: [{"currency": "TRX", "amount": 500}, {"currency": "USD", "amount": 65}]
+                    usd_record = cv_data[1]
+                    original_amount = amount # Yedek
+                    
+                    # Ana tutarı USD'ye güncelle
+                    amount = float(usd_record['amount'])
+                    logger.info(f"💱 Kur Çevirisi Yapıldı: {original_amount} {symbol} -> {amount} USD")
+                    
+                except Exception as e:
+                    logger.error(f"❌ Kur Çevirme Hatası ({symbol}): {e}")
+                    # Hata alırsa amount değişmez (Orjinal değerle devam eder)
+
+                # Güncel amount (USD) ile kilitleme yap
                 is_locked = await try_lock_transaction(transaction_id, tp_number, amount, symbol, status)
                 
                 if not is_locked:
