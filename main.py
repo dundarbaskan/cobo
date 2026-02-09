@@ -295,7 +295,7 @@ async def process_cobo_notification(data: dict):
                 if not lead:
                      # Müşteri yoksa zaten işleyemeyiz
                      logger.warning(f"⚠️ Bilinmeyen adrese deposit: {address} - Tx: {transaction_id}")
-                     send_telegram_msg(f"⚠️ <b>BİLİNMEYEN ADRESE ÖDEME</b>\n💵 {amount} {symbol}\n📍 {address}")
+                    #  send_telegram_msg(f"⚠️ <b>BİLİNMEYEN ADRESE ÖDEME</b>\n💵 {amount} {symbol}\n📍 {address}")
                      return
 
                 tp_number = lead.get("tp_number")
