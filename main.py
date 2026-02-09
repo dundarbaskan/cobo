@@ -260,7 +260,7 @@ async def process_cobo_notification(data: dict):
                 return
 
             # 2. Gerçek coin kontrolü - Sadece bilinen coinleri kabul et, fake tokenları engelle
-            ALLOWED_TOKENS = ["USDT", "USDC", "TRX", "ETH", "BTC", "LTC", "SOL", "MATIC", "BNB", "XRP", "ADA", "DOT"]
+            ALLOWED_TOKENS = ["USDT", "USDC", "TRX", "ETH", "BTC", "LTC", "SOL", "MATIC", "BNB", "XRP", "ADA", "DOT" , "TRON"]
             token_upper = (symbol or "").upper()
             
             is_allowed = False
