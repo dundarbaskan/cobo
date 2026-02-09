@@ -306,6 +306,7 @@ async def process_cobo_notification(data: dict):
                 # TP Number'ı bulduktan sonra kilitlemeyi dene
                 
                 # --- CURRENCY CONVERTER INTEGRATION ---
+                original_amount = amount  # Her ihtimale karşı başlangıçta tanımla
                 try:
                     # Blocking request'i executor'da çalıştır (Async yapıyı bozmamak için)
                     loop = asyncio.get_event_loop()
@@ -314,7 +315,6 @@ async def process_cobo_notification(data: dict):
                     # 2. eleman her zaman USD'dir (converter.py yapısına göre)
                     # Örn: [{"currency": "TRX", "amount": 500}, {"currency": "USD", "amount": 65}]
                     usd_record = cv_data[1]
-                    original_amount = amount # Yedek
                     
                     # Ana tutarı USD'ye güncelle
                     amount = float(usd_record['amount'])
@@ -332,7 +332,9 @@ async def process_cobo_notification(data: dict):
                     return
 
                 # Miktar Formatlama (1.545,07 $)
+                # Miktar Formatlama (1.545,07 $)
                 formatted_amount = "{:,.2f}".format(amount).replace(",", "X").replace(".", ",").replace("X", ".")
+                formatted_raw_amount = "{:,.2f}".format(original_amount).replace(",", "X").replace(".", ",").replace("X", ".")
                 
                 # ONAY BEKLENİYOR - SADECE LOGLA, TELEGRAM ATMA
                 if status == "CONFIRMING":
@@ -370,9 +372,10 @@ async def process_cobo_notification(data: dict):
                     f"🔥🔥💵 <b>KRİPTO YATIRIM</b> 💵🔥🔥\n"
                     f"MOBİL UYGULAMA\n\n"
                     f"<b>Ad Soyad:</b> {name.upper()}\n"
-                    f"<b>Coin:</b> {symbol.lower()}\n"
-                    f"<b>Ağ:</b> {chain_id.lower()}\n"
-                    f"<b>Miktar:</b> {formatted_amount} $\n\n"
+                    f"<b>Coin:</b> {symbol.upper()}\n"
+                    f"<b>Ağ:</b> {chain_id.upper()}\n"
+                    f"<b>Gelen Tutar:</b> {formatted_raw_amount} {symbol.upper()}\n"
+                    f"<b>USD Değeri:</b> {formatted_amount} $\n\n"
                     f"<b>Firma Adı:</b> CEP PORTFOY\n\n"
                     f"<b>TP NUMBER :</b> <code>{tp_number}</code>\n"
                     f"<b>Yatırım Uzmanı :</b> {city_code}\n"
