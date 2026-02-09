@@ -83,38 +83,54 @@ class MT5UserManager:
     def add_balance(self, user_login, amount, comment="Balance adjustment"):
         """Kullanıcıya bakiye ekle"""
         if not self.manager:
+            print(f"❌ MT5 Manager bağlantısı yok! (TP: {user_login})")
             return False
         
         try:
-            # ÖNEMLİ: Bu MT5Manager versiyonunda (5.0.4288) DealerBalance parametre sırası:
-            # DealerBalance(login, value/amount, type/action, comment)
-            # Action: 2 = DEAL_BALANCE (veya DEAL_CHARGE/ADJUSTMENT)
-            # Testlerimizde Action 2 başarılı (True), Action 0 "Invalid parameters" dönüyor.
+            print(f"🔄 MT5 Bakiye Ekleme İsteği: TP={user_login}, Miktar={amount}, Yorum={comment}")
+            
+            # DealerBalance çağrısı
+            # Parametreler: (Login, Tutar, Tip, Yorum)
+            # Tip 2 = DEAL_BALANCE (Bakiye Ekleme/Çıkarma)
             result = self.manager.DealerBalance(int(user_login), float(amount), 2, comment)
             
-            # Başarı kontrolü: Versiyon 5.0.4288 işlem başarılıysa Ticket numarası (pozitif int) döner.
+            print(f"ℹ️ MT5 DealerBalance Sonucu (Raw): {result} (Type: {type(result)})")
+            
+            is_success = False
+            
+            # Sonuç analizi
             if isinstance(result, bool):
-                success = result
-            elif isinstance(result, (int, float)):
-                # Ticket numarası döndüyse (örn: 17332670) başarılı demektir.
-                success = result > 0
+                is_success = result
+            elif isinstance(result, int):
+                # Pozitif tamsayı döndüyse Ticket ID'dir ve başarılıdır
+                is_success = result > 0
+                if is_success:
+                    print(f"✅ İşlem Başarılı! Ticket ID: {result}")
+            
+            if is_success:
+                print(f"✅ Bakiye Eklendi: {amount} $ -> TP: {user_login}")
+                return True
             else:
-                success = False
-                
-            if success:
-                print(f"✅ Bakiye başarıyla eklendi: {user_login} - {amount} ({comment})")
-            else:
-                # Hata detayını alalım
+                # Hata detayını yakalamaya çalış
+                error_code = "Unknown"
+                error_desc = "Unknown Error"
                 try:
-                    import MT5Manager
-                    _, _, err_msg = MT5Manager.LastError()
-                    print(f"❌ Bakiye ekleme başarısız! Hata: {err_msg} (TP: {user_login}, Result: {result})")
-                except:
-                    print(f"❌ Bakiye ekleme başarısız! Result: {result} (TP: {user_login})")
-                    
-            return success
+                    # Manager kütüphanesinden hata kodunu al
+                    err_info = self.manager.LastError()
+                    if err_info:
+                        error_code = str(err_info[0]) 
+                        error_desc = str(err_info[2]) # Genelde tuple döner: (code, 'OK', 'Description')
+                except Exception as err_ex:
+                    print(f"⚠️ Hata detayı alınamadı: {err_ex}")
+
+                print(f"❌ BAKİYE EKLENEMEDİ! TP: {user_login}, Miktar: {amount}")
+                print(f"❌ Hata Kodu: {error_code}, Açıklama: {error_desc}")
+                return False
+                
         except Exception as e:
-            print(f"❌ Bakiye ekleme hatası: {e}")
+            print(f"❌ Bakiye Ekleme Exception: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def get_financial_summary(self, user_login):
