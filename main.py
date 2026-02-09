@@ -343,6 +343,7 @@ async def process_cobo_notification(data: dict):
                         mt5_manager.disconnect()
 
                 # Yeni Telegram Formatı
+                #Telegram Message 
                 msg = (
                     f"🔥🔥💵 <b>KRİPTO YATIRIM</b> 💵🔥🔥\n"
                     f"MOBİL UYGULAMA\n\n"
