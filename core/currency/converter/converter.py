@@ -6,6 +6,7 @@ def coin_parser(symbol, amount):
     symbol: Cobo'dan gelen asset_id (BTC, TRON, ETH, USDT vb.)
     amount: Gelen miktar
     """
+    # CryptoCompare API kullanarak kripto parayı USD'ye çevirir.
     # 1. Verileri temizle
     symbol = str(symbol).upper().strip()
     amount = float(amount)

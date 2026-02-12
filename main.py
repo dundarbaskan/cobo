@@ -241,6 +241,7 @@ async def process_cobo_notification(data: dict):
             # Veri çekme mantığı
             address = tx.get("to_address") or tx.get("destination", {}).get("address")
             from_address = tx.get("from_address") or tx.get("source", {}).get("address")
+            #TODO dönüşüm yapılacak amount değeri convert içinden geçecek
             amount_str = tx.get("amount") or tx.get("destination", {}).get("amount")
             amount = float(amount_str) if amount_str else 0
             symbol = tx.get("token_id") or tx.get("coin_code") or tx.get("asset_id")
@@ -274,8 +275,10 @@ async def process_cobo_notification(data: dict):
                 return
                 
             # 3. Minimum tutar kontrolü - 1 USDT/USD değeri altını engelle
-            if amount < 1.0:
-                logger.info(f"⏭️ 1 USD altı miktar engellendi: {amount} {symbol} - {transaction_id}")
+            # 3. Minimum tutar kontrolü - 1 USD (Gerçek Değer) altını engelle
+            # Manuel Filtreleme: core/filter/base_volume_filter.py
+            from core.filter.base_volume_filter import BaseVolumeFilter
+            if await BaseVolumeFilter.should_block_transaction(symbol, amount, transaction_id):
                 return
             
             # 4. Sweep/birleştirme kontrolü - from_address bizim cüzdanlarımızdan biriyse engelle
