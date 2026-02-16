@@ -241,7 +241,7 @@ async def process_cobo_notification(data: dict):
             # Veri çekme mantığı
             address = tx.get("to_address") or tx.get("destination", {}).get("address")
             from_address = tx.get("from_address") or tx.get("source", {}).get("address")
-            #TODO dönüşüm yapılacak amount değeri convert içinden geçecek
+
             amount_str = tx.get("amount") or tx.get("destination", {}).get("amount")
             amount = float(amount_str) if amount_str else 0
             symbol = tx.get("token_id") or tx.get("coin_code") or tx.get("asset_id")
