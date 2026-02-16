@@ -39,7 +39,7 @@ def send_telegram_msg(message):
 @router.get("/admin")
 async def admin_panel(username: str = Depends(authenticate)):
     """Admin panel HTML sayfası"""
-    with open("admin.html", "r", encoding="utf-8") as f:
+    with open("frontend/admin.html", "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
 
 @router.get("/api/admin/dashboard")
