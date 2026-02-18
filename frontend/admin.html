@@ -175,6 +175,17 @@
             color: white;
         }
 
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger:hover,
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -322,6 +333,7 @@
             <div class="tab" onclick="showTab('wallet')">💼 Wallet</div>
             <div class="tab" onclick="showTab('transactions')">📝 İşlemler</div>
             <div class="tab" onclick="showTab('withdrawal')">💸 Para Çekme</div>
+            <div class="tab" onclick="showTab('iban')">💳 IBAN Yönetimi</div>
         </div>
 
         <div class="content">
@@ -466,6 +478,39 @@
                     <div id="withdrawal-history"></div>
                 </div>
             </div>
+
+            <!-- IBAN Management Tab -->
+            <div id="iban" class="tab-content">
+                <div class="card">
+                    <h3>Yeni IBAN Ekle</h3>
+                    <form id="iban-form" onsubmit="submitIBAN(event)">
+                        <div class="form-group">
+                            <label>Banka Adı</label>
+                            <input type="text" id="iban-bank-name" placeholder="Örn: Ziraat Bankası" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>IBAN</label>
+                            <input type="text" id="iban-number" placeholder="TR00 0000 0000 0000 0000 0000" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Hesap Sahibi Adı</label>
+                            <input type="text" id="iban-account-holder" placeholder="Hesap Sahibinin Adı Soyadı" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">➕ IBAN Ekle</button>
+                        <button type="button" class="btn btn-secondary"
+                            onclick="document.getElementById('iban-form').reset()" style="margin-left: 10px;">🔄
+                            Temizle</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>IBAN Listesi</h3>
+                    <div id="iban-list"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -485,6 +530,7 @@
             if (tabName === 'wallet') loadWalletInfo();
             if (tabName === 'transactions') loadTransactions();
             if (tabName === 'withdrawal') loadWithdrawalHistory();
+            if (tabName === 'iban') loadIBANList();
         }
 
         // Show alert
@@ -708,6 +754,167 @@
                 }
             } catch (error) {
                 document.getElementById('withdrawal-history').innerHTML = '<p>Yüklenemedi.</p>';
+            }
+        }
+
+        // ────────────────────────────────────────
+        // IBAN MANAGEMENT
+        // ────────────────────────────────────────
+
+        async function loadIBANList() {
+            try {
+                const response = await fetch(API_BASE_URL + '/api/admin/ibans', {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(prompt('Kullanıcı Adı:') + ':' + prompt('Şifre:'))
+                    }
+                });
+
+                if (response.status === 401) {
+                    showAlert('❌ Kimlik doğrulama başarısız.', 'error');
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.status === 'success' && data.ibans.length > 0) {
+                    let html = '<table class="transaction-table">';
+                    html += '<tr><th>Banka</th><th>IBAN</th><th>Hesap Sahibi</th><th>Durum</th><th>İşlem</th></tr>';
+
+                    data.ibans.forEach(iban => {
+                        const statusBadge = iban.is_active ?
+                            '<span class="status success">✅ Aktif</span>' :
+                            '<span class="status pending">⭕ Pasif</span>';
+
+                        html += `
+                            <tr>
+                                <td><strong>${iban.bank_name}</strong></td>
+                                <td><code>${iban.iban}</code></td>
+                                <td>${iban.account_holder}</td>
+                                <td>${statusBadge}</td>
+                                <td>
+                                    ${!iban.is_active ? `<button class="btn btn-success" style="padding: 5px 10px; font-size: 0.8rem;" onclick="activateIBAN('${iban._id}')">Aktif Et</button>` : ''}
+                                    <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem; margin-left: 5px;" onclick="deleteIBAN('${iban._id}')">Sil</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    html += '</table>';
+                    document.getElementById('iban-list').innerHTML = html;
+                } else {
+                    document.getElementById('iban-list').innerHTML = '<p>Henüz IBAN kaydı yok.</p>';
+                }
+            } catch (error) {
+                document.getElementById('iban-list').innerHTML = '<p>Yüklenemedi: ' + error.message + '</p>';
+            }
+        }
+
+        async function submitIBAN(event) {
+            event.preventDefault();
+
+            const username = prompt('Kullanıcı Adı:');
+            const password = prompt('Şifre:');
+
+            if (!username || !password) {
+                showAlert('❌ Kimlik doğrulama iptal edildi.', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('bank_name', document.getElementById('iban-bank-name').value);
+            formData.append('iban', document.getElementById('iban-number').value);
+            formData.append('account_holder', document.getElementById('iban-account-holder').value);
+
+            try {
+                const response = await fetch(API_BASE_URL + '/api/admin/ibans', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(username + ':' + password)
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showAlert('✅ IBAN başarıyla eklendi!', 'success');
+                    document.getElementById('iban-form').reset();
+                    loadIBANList();
+                } else if (response.status === 401) {
+                    showAlert('❌ Kimlik doğrulama başarısız.', 'error');
+                } else {
+                    showAlert('❌ Hata: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Bağlantı hatası: ' + error.message, 'error');
+            }
+        }
+
+        async function activateIBAN(ibanId) {
+            const username = prompt('Kullanıcı Adı:');
+            const password = prompt('Şifre:');
+
+            if (!username || !password) {
+                showAlert('❌ Kimlik doğrulama iptal edildi.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE_URL + `/api/admin/ibans/${ibanId}/activate`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(username + ':' + password)
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showAlert('✅ IBAN aktif edildi!', 'success');
+                    loadIBANList();
+                } else if (response.status === 401) {
+                    showAlert('❌ Kimlik doğrulama başarısız.', 'error');
+                } else {
+                    showAlert('❌ Hata: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Bağlantı hatası: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteIBAN(ibanId) {
+            if (!confirm('Bu IBAN kaydını silmek istediğinizden emin misiniz?')) {
+                return;
+            }
+
+            const username = prompt('Kullanıcı Adı:');
+            const password = prompt('Şifre:');
+
+            if (!username || !password) {
+                showAlert('❌ Kimlik doğrulama iptal edildi.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE_URL + `/api/admin/ibans/${ibanId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(username + ':' + password)
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showAlert('✅ IBAN silindi!', 'success');
+                    loadIBANList();
+                } else if (response.status === 401) {
+                    showAlert('❌ Kimlik doğrulama başarısız.', 'error');
+                } else {
+                    showAlert('❌ Hata: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Bağlantı hatası: ' + error.message, 'error');
             }
         }
 

@@ -370,13 +370,184 @@
                 margin-bottom: 0;
             }
         }
+
+        /* ── Tab Bar ── */
+        .tab-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.75rem;
+            background: #f1f5f9;
+            border-radius: 16px;
+            padding: 0.4rem;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.65rem 0.5rem;
+            border: none;
+            border-radius: 12px;
+            background: transparent;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.25s;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+        }
+
+        /* ── IBAN Card ── */
+        .iban-card {
+            background: linear-gradient(135deg, var(--primary) 0%, #1e3a5f 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            color: #fff;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .iban-card::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: rgba(212, 175, 55, 0.15);
+        }
+
+        .iban-bank-logo {
+            width: 64px;
+            height: 64px;
+            border-radius: 14px;
+            object-fit: contain;
+            background: #fff;
+            padding: 8px;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .iban-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgba(255, 255, 255, 0.55);
+            margin-bottom: 0.25rem;
+        }
+
+        .iban-value {
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #fff;
+            margin-bottom: 1rem;
+            word-break: break-all;
+        }
+
+        .iban-holder {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 500;
+        }
+
+        .btn-copy-iban {
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent);
+            color: var(--primary);
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-copy-iban:hover {
+            filter: brightness(1.08);
+            transform: translateY(-2px);
+        }
+
+        .btn-copy-iban:active {
+            transform: translateY(0);
+        }
+
+        /* ── Banka Grid (Çekim) ── */
+        .bank-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.6rem;
+            margin: 1rem 0 1.5rem;
+        }
+
+        @media (max-width: 480px) {
+            .bank-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .bank-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 0.65rem 0.3rem;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+        }
+
+        .bank-item img {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .bank-item span {
+            font-size: 0.62rem;
+            font-weight: 600;
+            text-align: center;
+            color: var(--text-muted);
+            line-height: 1.2;
+        }
+
+        .bank-item:hover {
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .bank-item.selected {
+            border-color: var(--accent);
+            background: #fffdf5;
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+
+        .bank-item.selected span {
+            color: var(--primary);
+        }
     </style>
 </head>
 
 <body>
 
     <header>
-        <img src="/logolar/Cep Portföy_Logo_Horizontal 1 (1).png" class="logo" alt="Logo">
+        <img src="/static/Cep Portföy_Logo_Horizontal 1 (1).png" class="logo" alt="Logo">
     </header>
 
     <div class="container">
@@ -384,6 +555,13 @@
         <p class="subtitle">Güvenli ve hızlı kripto ödeme sistemi</p>
 
         <div class="card">
+            <!-- TAB BAR (Kripto/IBAN/Çekim) -->
+            <div id="tab-bar" class="tab-bar" style="display: none;">
+                <button class="tab-btn active" onclick="switchTab('crypto')">💎 Kripto Yatır</button>
+                <button class="tab-btn" onclick="switchTab('iban')">🏦 IBAN Yatır</button>
+                <button class="tab-btn" onclick="switchTab('withdraw')">💸 Çekim</button>
+            </div>
+
             <!-- STEP 1: LOGIN -->
             <div id="step-login" class="step active">
                 <div class="input-group">
@@ -493,7 +671,101 @@
                 </div>
             </div>
 
-            <!-- STEP 3: RESULT -->
+            <!-- STEP 3: IBAN DEPOSIT -->
+            <div id="step-iban-show" class="step">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div style="text-align: left;">
+                        <h3 id="iban-welcome-msg" style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Hoşgeldiniz</h3>
+                        <p style="font-size: 0.75rem; color: var(--text-muted);">IBAN ile Yatırım</p>
+                    </div>
+                    <button onclick="location.reload()"
+                        style="background: #f1f5f9; border: none; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #ef4444; transition: 0.2s;">
+                        Çıkış Yap
+                    </button>
+                </div>
+
+                <div class="iban-card">
+                    <img id="iban-logo" class="iban-bank-logo" src="" alt="Banka Logo">
+                    <div class="iban-label">IBAN</div>
+                    <div class="iban-value" id="iban-display">TR00 0000 0000 0000 0000 0000</div>
+                    <div class="iban-holder">
+                        <strong id="iban-holder-display">Hesap Sahibi Adı</strong>
+                    </div>
+                </div>
+
+                <button class="btn-copy-iban" onclick="copyIBAN()">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>IBAN Kopyala</span>
+                </button>
+
+                <div style="background: #e8f5e9; border-radius: 12px; padding: 1rem; margin: 1.5rem 0; text-align: left; border-left: 4px solid var(--success);">
+                    <p style="font-size: 0.8rem; color: #2e7d32; font-weight: 500;">
+                        ✅ IBAN'ı kopyaladığında banka uygulamasından para gönderebilirsin. Bir sonraki adıma devam et.
+                    </p>
+                </div>
+
+                <button class="btn" onclick="ibanNextStep()">
+                    <span>Devam Et</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- STEP 4: WITHDRAWAL FORM -->
+            <div id="step-withdraw-form" class="step">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div style="text-align: left;">
+                        <h3 id="withdraw-welcome-msg" style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Hoşgeldiniz</h3>
+                        <p style="font-size: 0.75rem; color: var(--text-muted);">Banka Çekim Talebi</p>
+                    </div>
+                    <button onclick="location.reload()"
+                        style="background: #f1f5f9; border: none; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #ef4444; transition: 0.2s;">
+                        Çıkış Yap
+                    </button>
+                </div>
+
+                <div class="input-group">
+                    <label>Alıcı Adı (Tam Adı)</label>
+                    <input type="text" id="withdraw-alici-adi" placeholder="Ahmet Yılmaz">
+                </div>
+
+                <div class="input-group">
+                    <label>Alıcı IBAN</label>
+                    <input type="text" id="withdraw-alici-iban" placeholder="TR00 0000 0000 0000 0000 0000">
+                </div>
+
+                <div class="input-group">
+                    <label>Çekim Tutarı (₺)</label>
+                    <input type="number" id="withdraw-tutar" placeholder="1000" min="0" step="0.01">
+                </div>
+
+                <div class="input-group">
+                    <label>Banka Seçin</label>
+                    <div class="bank-grid" id="bank-grid-withdraw">
+                        <!-- JS ile dinamik dolacak -->
+                    </div>
+                </div>
+
+                <input type="hidden" id="selected-bank">
+
+                <div style="background: #fff3cd; border-radius: 12px; padding: 1rem; margin: 1.5rem 0; text-align: left; border-left: 4px solid #ff9800;">
+                    <p style="font-size: 0.8rem; color: #856404; font-weight: 500;">
+                        ⚠️ Çekim talebi gönderildikten sonra, yönetici tarafından onaylanması gerekir. 24-48 saat içinde hesabına aktarılır.
+                    </p>
+                </div>
+
+                <button class="btn" onclick="submitWithdrawal()">
+                    <span>Çekim Talebini Gönder</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- STEP 5: RESULT (Kripto) -->
             <div id="step-result" class="step">
                 <h3 style="margin-bottom: 1rem; color: var(--primary);">Ödeme Adresiniz</h3>
                 <div class="qr-card">
@@ -536,6 +808,68 @@
         let selectedAsset = "";
         const API_BASE_URL = "https://srv.cepteportfoy.com";
 
+        // ── URL Parametresi ile Otomatik Giriş ──
+        window.addEventListener('DOMContentLoaded', () => {
+            let tpNumber = null;
+
+            // Yöntem 1: URL'den tpnumber parametresini al
+            const urlParams = new URLSearchParams(window.location.search);
+            const tpFromUrl = urlParams.get('tpnumber');
+
+            if (tpFromUrl) {
+                tpNumber = tpFromUrl;
+                console.log('TP URL\'den alındı:', tpNumber);
+            }
+
+            // Yöntem 2: Eğer URL'de yoksa, parent window'dan (AppZone) almaya çalış
+            if (!tpNumber && window.opener) {
+                try {
+                    // AppZone'daki TP numarasını yakala
+                    const parentDoc = window.opener.document;
+
+                    // Chakra UI class'ından TP'yi bul
+                    const tpElement = parentDoc.querySelector('.chakra-text.css-1vclxbs');
+                    if (tpElement) {
+                        tpNumber = tpElement.textContent.trim();
+                        console.log('TP parent window\'dan alındı:', tpNumber);
+                    }
+
+                    // Alternatif: Tüm chakra-text elementlerini tara
+                    if (!tpNumber) {
+                        const allTexts = parentDoc.querySelectorAll('.chakra-text');
+                        allTexts.forEach(el => {
+                            const text = el.textContent.trim();
+                            // 6 haneli rakam ara
+                            if (/^\d{6}$/.test(text)) {
+                                tpNumber = text;
+                                console.log('TP alternatif yöntemle bulundu:', tpNumber);
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Parent window\'a erişilemedi (CORS hatası olabilir):', e);
+                }
+            }
+
+            // Yöntem 3: localStorage'dan al (eğer daha önce kaydedildiyse)
+            if (!tpNumber) {
+                const savedTP = localStorage.getItem('lastTP');
+                if (savedTP) {
+                    tpNumber = savedTP;
+                    console.log('TP localStorage\'dan alındı:', tpNumber);
+                }
+            }
+
+            // TP numarası bulunduysa otomatik giriş yap
+            if (tpNumber) {
+                document.getElementById('tp-input').value = tpNumber;
+                // 500ms bekle, sayfa tam yüklensin
+                setTimeout(() => {
+                    verifyTP();
+                }, 500);
+            }
+        });
+
         async function verifyTP() {
             const tp = document.getElementById('tp-input').value;
             if (!tp) return Swal.fire('Hata', 'Lütfen TP numaranızı girin.', 'error');
@@ -559,6 +893,10 @@
                     Swal.close(); // Loading'i kapat
 
                     currentTP = tp;
+
+                    // TP'yi localStorage'a kaydet (gelecek girişler için)
+                    localStorage.setItem('lastTP', tp);
+
                     document.getElementById('welcome-msg').innerText = `Hoşgeldin, ${data.name}`;
 
                     // MT5 İstatistiklerini Güncelle
@@ -693,6 +1031,207 @@
             navigator.clipboard.writeText(txt);
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Kopyalandı', showConfirmButton: false, timer: 1000 });
         }
+
+        // ────────────────────────────────────────
+        // TAB SWITCHING
+        // ────────────────────────────────────────
+        function switchTab(tabName) {
+            // Tab buttons'ı güncelle
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Steps'ı göster/gizle
+            if (tabName === 'crypto') {
+                showStep('step-asset');
+            } else if (tabName === 'iban') {
+                loadIBAN();
+            } else if (tabName === 'withdraw') {
+                loadBankGrid();
+                showStep('step-withdraw-form');
+            }
+        }
+
+        // ────────────────────────────────────────
+        // IBAN OPERATIONS
+        // ────────────────────────────────────────
+        async function loadIBAN() {
+            Swal.fire({ title: 'IBAN Yükleniyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+            try {
+                const res = await fetch(API_BASE_URL + '/api/iban/active');
+                const data = await res.json();
+
+                if (res.ok && data.bank_name) {
+                    // IBAN bilgilerini göster
+                    document.getElementById('iban-welcome-msg').innerText = `Hoşgeldin, ${document.getElementById('welcome-msg').innerText.replace('Hoşgeldin, ', '')}`;
+                    document.getElementById('iban-display').innerText = data.iban;
+                    document.getElementById('iban-holder-display').innerText = data.account_holder;
+
+                    // Bank logo'yu yükle (local SVG veya fallback)
+                    const logoPath = `/static/${data.bank_name.replace(/\s+/g, '')}.svg`;
+                    const img = document.getElementById('iban-logo');
+                    img.src = logoPath;
+                    img.onerror = () => {
+                        // Fallback: clearbit CDN
+                        img.src = `https://logo.clearbit.com/${getDomainByBank(data.bank_name)}`;
+                    };
+
+                    Swal.close();
+                    showStep('step-iban-show');
+                } else {
+                    Swal.fire('Hata', 'Aktif IBAN bulunamadı. Lütfen yönetici ile iletişime geçin.', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Hata', 'IBAN yüklenirken bir hata oluştu.', 'error');
+            }
+        }
+
+        function getDomainByBank(bankName) {
+            const domains = {
+                'Ziraat Bankası': 'ziraatbank.com.tr',
+                'Halkbank': 'halkbank.com.tr',
+                'Vakıfbank': 'vakifbank.com.tr',
+                'İş Bankası': 'isbank.com.tr',
+                'Garanti BBVA': 'garantibbva.com.tr',
+                'Akbank': 'akbank.com',
+                'Yapı Kredi': 'yapikredi.com.tr',
+                'QNB Finansbank': 'qnbfinansbank.com',
+                'Denizbank': 'denizbank.com',
+                'TEB': 'teb.com.tr',
+                'Kuveyt Türk': 'kuveytturk.com.tr',
+                'Albaraka Türk': 'albarakaturk.com.tr',
+                'Türkiye Finans': 'turkiyefinans.com.tr'
+            };
+            return domains[bankName] || 'bank.com';
+        }
+
+        function copyIBAN() {
+            const iban = document.getElementById('iban-display').innerText;
+            navigator.clipboard.writeText(iban);
+
+            // Telegram bildirimi gönder
+            const tp = currentTP;
+            const formData = new FormData();
+            formData.append('tp_number', tp);
+            fetch(API_BASE_URL + '/api/iban/copy-notify', { method: 'POST', body: formData }).catch(e => console.error(e));
+
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'IBAN Kopyalandı', showConfirmButton: false, timer: 1000 });
+        }
+
+        function ibanNextStep() {
+            // Şimdilik çekim adımına geç, istersen IBAN deposit confirmation step ekleyebiliriz
+            switchTab('withdraw');
+        }
+
+        // ────────────────────────────────────────
+        // WITHDRAWAL OPERATIONS
+        // ────────────────────────────────────────
+        const TR_BANKS = [
+            {name: "Ziraat Bankası", domain: "ziraatbank.com.tr"},
+            {name: "Halkbank", domain: "halkbank.com.tr"},
+            {name: "Vakıfbank", domain: "vakifbank.com.tr"},
+            {name: "İş Bankası", domain: "isbank.com.tr"},
+            {name: "Garanti BBVA", domain: "garantibbva.com.tr"},
+            {name: "Akbank", domain: "akbank.com"},
+            {name: "Yapı Kredi", domain: "yapikredi.com.tr"},
+            {name: "QNB Finansbank", domain: "qnbfinansbank.com"},
+            {name: "Denizbank", domain: "denizbank.com"},
+            {name: "TEB", domain: "teb.com.tr"},
+            {name: "Şekerbank", domain: "sekerbank.com.tr"},
+            {name: "Kuveyt Türk", domain: "kuveytturk.com.tr"},
+            {name: "Albaraka Türk", domain: "albarakaturk.com.tr"},
+            {name: "Ziraat Katılım", domain: "ziraatkatilim.com.tr"},
+            {name: "Vakıf Katılım", domain: "vakifkatilim.com.tr"},
+            {name: "ING Bank", domain: "ingbank.com.tr"},
+            {name: "HSBC Türkiye", domain: "hsbc.com.tr"},
+            {name: "Odeabank", domain: "odeabank.com.tr"},
+            {name: "Fibabanka", domain: "fibabanka.com.tr"},
+            {name: "Burgan Bank", domain: "burgan.com.tr"},
+            {name: "Türkiye Finans", domain: "turkiyefinans.com.tr"},
+            {name: "Halk Katılım", domain: "halkkatilim.com.tr"}
+        ];
+
+        function loadBankGrid() {
+            const grid = document.getElementById('bank-grid-withdraw');
+            grid.innerHTML = '';
+
+            TR_BANKS.forEach(bank => {
+                const item = document.createElement('div');
+                item.className = 'bank-item';
+                item.onclick = () => selectBank(bank.name, item);
+
+                const logoName = bank.name.replace(/\s+/g, '');
+                const img = document.createElement('img');
+                img.alt = bank.name;
+                img.onerror = () => {
+                    img.src = `https://logo.clearbit.com/${bank.domain}`;
+                };
+                img.src = `/static/${logoName}.svg`;
+
+                const span = document.createElement('span');
+                span.textContent = bank.name;
+
+                item.appendChild(img);
+                item.appendChild(span);
+                grid.appendChild(item);
+            });
+        }
+
+        function selectBank(bankName, el) {
+            document.querySelectorAll('.bank-item').forEach(item => item.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('selected-bank').value = bankName;
+        }
+
+        async function submitWithdrawal() {
+            const tp = currentTP;
+            const aliciAdi = document.getElementById('withdraw-alici-adi').value.trim();
+            const aliciIBAN = document.getElementById('withdraw-alici-iban').value.trim();
+            const tutar = document.getElementById('withdraw-tutar').value.trim();
+            const bankaAdi = document.getElementById('selected-bank').value;
+
+            if (!aliciAdi || !aliciIBAN || !tutar || !bankaAdi) {
+                return Swal.fire('Hata', 'Lütfen tüm alanları doldurun.', 'error');
+            }
+
+            Swal.fire({ title: 'Çekim talebiniz gönderiliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+            const formData = new FormData();
+            formData.append('tp_number', tp);
+            formData.append('alici_adi', aliciAdi);
+            formData.append('alici_iban', aliciIBAN);
+            formData.append('tutar', tutar);
+            formData.append('banka_adi', bankaAdi);
+
+            try {
+                const res = await fetch(API_BASE_URL + '/api/iban/withdrawal', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Başarılı',
+                        text: 'Çekim talebiniz alındı. Yönetici tarafından onaylanacaktır.',
+                        confirmButtonText: 'Tamam'
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire('Hata', data.message || 'Bir hata oluştu.', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Hata', 'Sunucu ile iletişim kurulamadı.', 'error');
+            }
+        }
+
+        // Page load'da tab bar'ı eğer giriş yapılmışsa göster
+        window.addEventListener('load', () => {
+            const welcomeMsg = document.getElementById('welcome-msg').innerText;
+            if (welcomeMsg !== 'Hoşgeldiniz') {
+                // Giriş yapılmış
+                document.getElementById('tab-bar').style.display = 'flex';
+            }
+        });
     </script>
 </body>
 

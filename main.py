@@ -34,6 +34,7 @@ from api.wallet_router import router as wallet_router
 from api.webhook_router import router as webhook_router
 from api.system_router import router as system_router
 from api.telegram_router import router as telegram_router
+from api.iban_router import router as iban_router
 
 # Telegram Bot
 from bot.telegram_bot import run_telegram_bot
@@ -68,6 +69,7 @@ app.include_router(wallet_router)
 app.include_router(webhook_router)
 app.include_router(system_router)
 app.include_router(telegram_router)
+app.include_router(iban_router)
 
 
 if __name__ == "__main__":

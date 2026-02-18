@@ -155,14 +155,14 @@ async def get_all_our_addresses():
 async def ensure_transaction_index():
     """
     transactions collection'ında transaction_id alanına UNIQUE INDEX oluşturur.
-    Kullanıcı İsteği Üzerine: Otomatik duplicate silme KAPALI! 
+    Kullanıcı İsteği Üzerine: Otomatik duplicate silme KAPALI!
     Sadece index oluşturur, hata verirse manuel müdahale gerekir.
     """
     try:
         # Sadece Index Oluşturmaya Çalış
         await db.transactions.create_index("transaction_id", unique=True)
         print("✅ Unique Index oluşturuldu/kontrol edildi: transactions.transaction_id")
-        
+
     except Exception as e:
         error_msg = str(e).lower()
         if "duplicate key error" in error_msg:
@@ -173,5 +173,75 @@ async def ensure_transaction_index():
              print("✅ Index zaten mevcut.")
         else:
              print(f"❌ Index Hatası: {e}")
+
+
+# ============================================================
+# IBAN YÖNETİMİ — db.ibans koleksiyonu
+# Şema: { bank_name, iban, account_holder, is_active, created_at, updated_at }
+# Kural: Aynı anda yalnızca 1 IBAN is_active=True olabilir.
+# ============================================================
+
+from bson import ObjectId
+
+iban_collection = db.ibans
+
+
+async def get_active_iban() -> dict | None:
+    """Aktif (is_active=True) olan IBAN'ı döner. Yoksa None."""
+    doc = await iban_collection.find_one({"is_active": True})
+    if doc:
+        doc["_id"] = str(doc["_id"])
+    return doc
+
+
+async def get_all_ibans() -> list:
+    """Tüm IBAN kayıtlarını döner (aktif + pasif), oluşturma tarihine göre sıralar."""
+    cursor = iban_collection.find({}).sort("created_at", -1)
+    result = []
+    async for doc in cursor:
+        doc["_id"] = str(doc["_id"])
+        result.append(doc)
+    return result
+
+
+async def save_iban(iban_data: dict) -> str:
+    """
+    Yeni IBAN kaydı ekler.
+    Returns: Eklenen belgenin string ObjectId'si
+    """
+    now = datetime.datetime.now()
+    iban_data["is_active"] = False
+    iban_data["created_at"] = now
+    iban_data["updated_at"] = now
+    result = await iban_collection.insert_one(iban_data)
+    return str(result.inserted_id)
+
+
+async def set_iban_active(iban_id: str):
+    """
+    Belirtilen IBAN'ı aktif eder.
+    Önce tüm IBAN'ları pasif yapar, sonra seçileni aktif eder.
+    """
+    now = datetime.datetime.now()
+    # Hepsini pasif yap
+    await iban_collection.update_many({}, {"$set": {"is_active": False, "updated_at": now}})
+    # Seçileni aktif yap
+    await iban_collection.update_one(
+        {"_id": ObjectId(iban_id)},
+        {"$set": {"is_active": True, "updated_at": now}}
+    )
+
+
+async def set_iban_inactive(iban_id: str):
+    """Belirtilen IBAN'ı pasif eder."""
+    await iban_collection.update_one(
+        {"_id": ObjectId(iban_id)},
+        {"$set": {"is_active": False, "updated_at": datetime.datetime.now()}}
+    )
+
+
+async def delete_iban(iban_id: str):
+    """Belirtilen IBAN kaydını siler."""
+    await iban_collection.delete_one({"_id": ObjectId(iban_id)})
 
 
