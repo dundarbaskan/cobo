@@ -675,7 +675,8 @@
             <div id="step-iban-show" class="step">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <div style="text-align: left;">
-                        <h3 id="iban-welcome-msg" style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Hoşgeldiniz</h3>
+                        <h3 id="iban-welcome-msg" style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">
+                            Hoşgeldiniz</h3>
                         <p style="font-size: 0.75rem; color: var(--text-muted);">IBAN ile Yatırım</p>
                     </div>
                     <button onclick="location.reload()"
@@ -695,12 +696,14 @@
 
                 <button class="btn-copy-iban" onclick="copyIBAN()">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                     <span>IBAN Kopyala</span>
                 </button>
 
-                <div style="background: #e8f5e9; border-radius: 12px; padding: 1rem; margin: 1.5rem 0; text-align: left; border-left: 4px solid var(--success);">
+                <div
+                    style="background: #e8f5e9; border-radius: 12px; padding: 1rem; margin: 1.5rem 0; text-align: left; border-left: 4px solid var(--success);">
                     <p style="font-size: 0.8rem; color: #2e7d32; font-weight: 500;">
                         ✅ IBAN'ı kopyaladığında banka uygulamasından para gönderebilirsin. Bir sonraki adıma devam et.
                     </p>
@@ -718,7 +721,8 @@
             <div id="step-withdraw-form" class="step">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <div style="text-align: left;">
-                        <h3 id="withdraw-welcome-msg" style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Hoşgeldiniz</h3>
+                        <h3 id="withdraw-welcome-msg"
+                            style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Hoşgeldiniz</h3>
                         <p style="font-size: 0.75rem; color: var(--text-muted);">Banka Çekim Talebi</p>
                     </div>
                     <button onclick="location.reload()"
@@ -751,16 +755,19 @@
 
                 <input type="hidden" id="selected-bank">
 
-                <div style="background: #fff3cd; border-radius: 12px; padding: 1rem; margin: 1.5rem 0; text-align: left; border-left: 4px solid #ff9800;">
+                <div
+                    style="background: #fff3cd; border-radius: 12px; padding: 1rem; margin: 1.5rem 0; text-align: left; border-left: 4px solid #ff9800;">
                     <p style="font-size: 0.8rem; color: #856404; font-weight: 500;">
-                        ⚠️ Çekim talebi gönderildikten sonra, yönetici tarafından onaylanması gerekir. 24-48 saat içinde hesabına aktarılır.
+                        ⚠️ Çekim talebi gönderildikten sonra, yönetici tarafından onaylanması gerekir. 24-48 saat içinde
+                        hesabına aktarılır.
                     </p>
                 </div>
 
                 <button class="btn" onclick="submitWithdrawal()">
                     <span>Çekim Talebini Gönder</span>
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
                 </button>
             </div>
@@ -806,7 +813,7 @@
     <script>
         let currentTP = "";
         let selectedAsset = "";
-        const API_BASE_URL = "https://srv.cepteportfoy.com";
+        const API_BASE_URL = "https://test.srv.cepteportfoy.com";
 
         // ── URL Parametresi ile Otomatik Giriş ──
         window.addEventListener('DOMContentLoaded', () => {
@@ -1128,28 +1135,28 @@
         // WITHDRAWAL OPERATIONS
         // ────────────────────────────────────────
         const TR_BANKS = [
-            {name: "Ziraat Bankası", domain: "ziraatbank.com.tr"},
-            {name: "Halkbank", domain: "halkbank.com.tr"},
-            {name: "Vakıfbank", domain: "vakifbank.com.tr"},
-            {name: "İş Bankası", domain: "isbank.com.tr"},
-            {name: "Garanti BBVA", domain: "garantibbva.com.tr"},
-            {name: "Akbank", domain: "akbank.com"},
-            {name: "Yapı Kredi", domain: "yapikredi.com.tr"},
-            {name: "QNB Finansbank", domain: "qnbfinansbank.com"},
-            {name: "Denizbank", domain: "denizbank.com"},
-            {name: "TEB", domain: "teb.com.tr"},
-            {name: "Şekerbank", domain: "sekerbank.com.tr"},
-            {name: "Kuveyt Türk", domain: "kuveytturk.com.tr"},
-            {name: "Albaraka Türk", domain: "albarakaturk.com.tr"},
-            {name: "Ziraat Katılım", domain: "ziraatkatilim.com.tr"},
-            {name: "Vakıf Katılım", domain: "vakifkatilim.com.tr"},
-            {name: "ING Bank", domain: "ingbank.com.tr"},
-            {name: "HSBC Türkiye", domain: "hsbc.com.tr"},
-            {name: "Odeabank", domain: "odeabank.com.tr"},
-            {name: "Fibabanka", domain: "fibabanka.com.tr"},
-            {name: "Burgan Bank", domain: "burgan.com.tr"},
-            {name: "Türkiye Finans", domain: "turkiyefinans.com.tr"},
-            {name: "Halk Katılım", domain: "halkkatilim.com.tr"}
+            { name: "Ziraat Bankası", domain: "ziraatbank.com.tr" },
+            { name: "Halkbank", domain: "halkbank.com.tr" },
+            { name: "Vakıfbank", domain: "vakifbank.com.tr" },
+            { name: "İş Bankası", domain: "isbank.com.tr" },
+            { name: "Garanti BBVA", domain: "garantibbva.com.tr" },
+            { name: "Akbank", domain: "akbank.com" },
+            { name: "Yapı Kredi", domain: "yapikredi.com.tr" },
+            { name: "QNB Finansbank", domain: "qnbfinansbank.com" },
+            { name: "Denizbank", domain: "denizbank.com" },
+            { name: "TEB", domain: "teb.com.tr" },
+            { name: "Şekerbank", domain: "sekerbank.com.tr" },
+            { name: "Kuveyt Türk", domain: "kuveytturk.com.tr" },
+            { name: "Albaraka Türk", domain: "albarakaturk.com.tr" },
+            { name: "Ziraat Katılım", domain: "ziraatkatilim.com.tr" },
+            { name: "Vakıf Katılım", domain: "vakifkatilim.com.tr" },
+            { name: "ING Bank", domain: "ingbank.com.tr" },
+            { name: "HSBC Türkiye", domain: "hsbc.com.tr" },
+            { name: "Odeabank", domain: "odeabank.com.tr" },
+            { name: "Fibabanka", domain: "fibabanka.com.tr" },
+            { name: "Burgan Bank", domain: "burgan.com.tr" },
+            { name: "Türkiye Finans", domain: "turkiyefinans.com.tr" },
+            { name: "Halk Katılım", domain: "halkkatilim.com.tr" }
         ];
 
         function loadBankGrid() {
