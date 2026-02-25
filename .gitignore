@@ -1,2 +1,6 @@
 logs/ 
 venv/ 
+__pycache__/
+*.pyc
+bases/
+*.dat
