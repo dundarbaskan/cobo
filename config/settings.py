@@ -43,15 +43,9 @@ SERVER_IP = os.getenv("SERVER_IP")
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "besimtrump18")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Bg180913*")
 
-# MT5 Manager Instance (Singleton)
-# Import burada yapılıyor çünkü MT5UserManager servisler klasöründe
-# Circular import'tan kaçınmak için lazy loading yapacağız
-_mt5_manager = None
 
 def get_mt5_manager():
-    """MT5 Manager singleton instance döndürür"""
-    global _mt5_manager
-    if _mt5_manager is None:
-        from servisler.mt5service import MT5UserManager
-        _mt5_manager = MT5UserManager(MT5_SERVER, MT5_LOGIN, MT5_PASSWORD)
-    return _mt5_manager
+    """Yeni bir MT5 Manager instance döndürür (Concurrent işlemler için güvenli)"""
+    from servisler.mt5service import MT5UserManager
+    return MT5UserManager(MT5_SERVER, MT5_LOGIN, MT5_PASSWORD)
+
