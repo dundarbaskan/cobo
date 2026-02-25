@@ -19,7 +19,7 @@ module.exports = {
             },
             // "pm2 start ecosystem.config.js --env test" -> Test Modu!
             env_test: {
-                PORT: 8001, // Canlı malla çakışmaması için test portunu ayırdık
+                PORT: 8000,
                 ENVIRONMENT: "test",
                 NODE_ENV: "development",
                 PYTHONIOENCODING: "utf-8",
