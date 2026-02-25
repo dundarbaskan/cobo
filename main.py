@@ -36,6 +36,62 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+# --- MIDDLEWARE: Ortam Kontrolü ve Rate Limiting ---
+import time
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "release")
+ALLOWED_TEST_IP = "78.135.2.18"
+REQUEST_COUNTS = {}
+
+@app.middleware("http")
+async def verify_and_rate_limit(request: Request, call_next):
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else request.client.host
+    path = request.url.path
+
+    # İstisnalar: Statik listeler, webhook ve sistem içi (localhost) komut istekleri
+    if path.startswith("/logolar") or path == "/cobo/callback" or client_ip in ["127.0.0.1", "localhost", "::1"]:
+        return await call_next(request)
+
+    # TÜM KISITLAMALAR SADECE TEST MODUNDA GEÇERLİDİR
+    if ENVIRONMENT == "test":
+        # 1. Rate Limiting (Test Modu İçin IP Başına 1 Dakikada 10 İstek)
+        current_time = time.time()
+        if client_ip not in REQUEST_COUNTS:
+            REQUEST_COUNTS[client_ip] = {"count": 1, "start_time": current_time}
+        else:
+            ip_data = REQUEST_COUNTS[client_ip]
+            if current_time - ip_data["start_time"] < 60:
+                if ip_data["count"] >= 10:
+                    # 1 dakika dolmadan 10'dan fazla geldiyse engelle
+                    return JSONResponse(
+                        status_code=429, 
+                        content={"status": "error", "message": "Çok fazla istek gönderdiniz. Lütfen 1 dakika bekleyin."}
+                    )
+                ip_data["count"] += 1
+            else:
+                # 1 dakika dolduğu için sayacı ve süreyi sıfırla
+                REQUEST_COUNTS[client_ip] = {"count": 1, "start_time": current_time}
+
+        # 2. Test Ortamı Doğrulaması (Bakım Modu IP İzni)
+        if client_ip != ALLOWED_TEST_IP:
+            if os.path.exists("testing.html"):
+                with open("testing.html", "r", encoding="utf-8") as f:
+                    return HTMLResponse(content=f.read(), status_code=503)
+            else:
+                return HTMLResponse(
+                    content="""
+                    <div style='text-align:center;margin-top:15%;font-family:sans-serif;'>
+                        <h1>Sistem Bakımda (Test Aşaması)</h1>
+                        <p>Şu anda sistemde test ve güncellemeler yapılıyor. Çok yakında aktif olacağız!</p>
+                    </div>
+                    """,
+                    status_code=503
+                )
+
+    return await call_next(request)
+# ----------------------------------------------------
+
 # Startup Event: Veritabanı ve Index Kontrolleri
 @app.on_event("startup")
 async def startup_event():
