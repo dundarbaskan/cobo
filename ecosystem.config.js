@@ -9,9 +9,19 @@ module.exports = {
             autorestart: true,
             watch: false,
             max_memory_restart: '1G',
+            // Varsayılan "pm2 start ecosystem.config.js" -> Canlı (Release)
             env: {
                 PORT: 8000,
+                ENVIRONMENT: "release",
                 NODE_ENV: "production",
+                PYTHONIOENCODING: "utf-8",
+                PYTHONUTF8: "1"
+            },
+            // "pm2 start ecosystem.config.js --env test" -> Test Modu!
+            env_test: {
+                PORT: 8001, // Canlı malla çakışmaması için test portunu ayırdık
+                ENVIRONMENT: "test",
+                NODE_ENV: "development",
                 PYTHONIOENCODING: "utf-8",
                 PYTHONUTF8: "1"
             },
@@ -28,7 +38,15 @@ module.exports = {
             instances: 1,
             autorestart: true,
             watch: false,
+            // Varsayılan
             env: {
+                ENVIRONMENT: "release",
+                PYTHONIOENCODING: "utf-8",
+                PYTHONUTF8: "1"
+            },
+            // Test
+            env_test: {
+                ENVIRONMENT: "test",
                 PYTHONIOENCODING: "utf-8",
                 PYTHONUTF8: "1"
             },
@@ -36,7 +54,6 @@ module.exports = {
             error_file: "./logs/mt5-error.log",
             out_file: "./logs/mt5-out.log",
             time: true
-        },
-
+        }
     ]
 };
