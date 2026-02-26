@@ -3,7 +3,7 @@ module.exports = {
         {
             name: "COBO-API",
             script: "main.py",
-            interpreter: "./venv/Scripts/python.exe",
+            interpreter: "./sanallik/Scripts/python.exe",
             interpreter_args: "-X utf8",
             instances: 1,
             autorestart: true,
@@ -33,7 +33,7 @@ module.exports = {
         {
             name: "COBO-MT5",
             script: "mt5_worker.py",
-            interpreter: "./venv/Scripts/python.exe",
+            interpreter: "./sanallik/Scripts/python.exe",
             interpreter_args: "-X utf8",
             instances: 1,
             autorestart: true,
