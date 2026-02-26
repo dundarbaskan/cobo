@@ -9,3 +9,4 @@ cobo-waas2
 qrcode
 Pillow
 python-multipart
+PyJWT

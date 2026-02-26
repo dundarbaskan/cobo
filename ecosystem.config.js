@@ -9,10 +9,10 @@ module.exports = {
             autorestart: true,
             watch: false,
             max_memory_restart: '1G',
-            // Varsayılan "pm2 start ecosystem.config.js" -> Test Canlı (Release)
+            // Varsayılan "pm2 start ecosystem.config.js" -> Canlı (Release)
             env: {
-                PORT: 8001,
-                ENVIRONMENT: "test",
+                PORT: 8000,
+                ENVIRONMENT: "release",
                 NODE_ENV: "production",
                 PYTHONIOENCODING: "utf-8",
                 PYTHONUTF8: "1"

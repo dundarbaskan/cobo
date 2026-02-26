@@ -38,6 +38,16 @@ MT5_GROUP_MASK = os.getenv("MT5_GROUP_MASK", "*")
 # Server Ayarları
 PORT = int(os.getenv("PORT", 8001))
 SERVER_IP = os.getenv("SERVER_IP")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "test")
+
+# Bakım (Maintenance) Ayarları
+MAINTENANCE_ACTIVE = os.getenv("MAINTENANCE_ACTIVE", "True").lower() == "true"
+ADMIN_IP = os.getenv("ADMIN_IP", "78.135.2.18")  # Sadece bu IP whitelistte!
+MAINTENANCE_MINUTES = int(os.getenv("MAINTENANCE_MINUTES", 120))  # 2 Saatlik global bakım sayacı
+
+# Güvenlik (JWT) Ayarları
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "4aw^DQ9'0a/(")
+JWT_ALGORITHM = "HS256"
 
 # Admin Panel Ayarları
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "besimtrump18")

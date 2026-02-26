@@ -576,6 +576,27 @@
                 </button>
             </div>
 
+            <!-- STEP 1.5: OTP GİRİŞİ -->
+            <div id="step-otp" class="step">
+                <div style="text-align: left; margin-bottom: 1.5rem;">
+                    <h3 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Güvenlik Doğrulaması</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Telegram hesabınıza
+                        gönderilen 6 haneli tek kullanımlık (OTP) kodu giriniz.</p>
+                </div>
+                <div class="input-group">
+                    <label>Doğrulama Kodu</label>
+                    <input type="text" id="otp-input" placeholder="Örn: 847291" maxlength="6"
+                        style="text-align: center; font-size: 1.5rem; letter-spacing: 5px;">
+                </div>
+                <button class="btn btn-accent" onclick="verifyOTP()">
+                    <span>Doğrula ve Giriş Yap</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
+            </div>
+
             <!-- STEP 2: ASSET SELECTION -->
             <div id="step-asset" class="step">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
@@ -705,16 +726,10 @@
                 <div
                     style="background: #e8f5e9; border-radius: 12px; padding: 1rem; margin: 1.5rem 0; text-align: left; border-left: 4px solid var(--success);">
                     <p style="font-size: 0.8rem; color: #2e7d32; font-weight: 500;">
-                        ✅ IBAN'ı kopyaladığında banka uygulamasından para gönderebilirsin. Bir sonraki adıma devam et.
+                        ✅ IBAN'ı kopyaladıktan sonra banka uygulamanız üzerinden para gönderiminizi
+                        gerçekleştirebilirsiniz. Gönderim sonrası bakiyeniz kısa süre içinde hesabınıza yansıyacaktır.
                     </p>
                 </div>
-
-                <button class="btn" onclick="ibanNextStep()">
-                    <span>Devam Et</span>
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="9 5l7 7-7 7" />
-                    </svg>
-                </button>
             </div>
 
             <!-- STEP 4: WITHDRAWAL FORM -->
@@ -812,6 +827,7 @@
 
     <script>
         let currentTP = "";
+        let currentToken = ""; // JWT Token tutulacak değişken
         let selectedAsset = "";
         const API_BASE_URL = "https://test.srv.cepteportfoy.com";
 
@@ -867,13 +883,10 @@
                 }
             }
 
-            // TP numarası bulunduysa otomatik giriş yap
+            // TP numarası bulunduysa input alanını otomatik doldur ama GİRİŞ YAPMA (Sistemi yormamak için)
             if (tpNumber) {
                 document.getElementById('tp-input').value = tpNumber;
-                // 500ms bekle, sayfa tam yüklensin
-                setTimeout(() => {
-                    verifyTP();
-                }, 500);
+                console.log("TP hazırlandı, kullanıcının Devam Et butonuna basması bekleniyor.");
             }
         });
 
@@ -896,7 +909,12 @@
                 const res = await fetch(API_BASE_URL + '/api/verify_tp', { method: 'POST', body: formData });
                 const data = await res.json();
 
-                if (data.status === 'success') {
+                if (data.status === 'requires_otp') {
+                    Swal.close();
+                    currentToken = data.token;
+                    currentTP = tp; // Geçici olarak al
+                    showStep('step-otp');
+                } else if (data.status === 'success') {
                     Swal.close(); // Loading'i kapat
 
                     currentTP = tp;
@@ -918,6 +936,9 @@
                         }
                     }
 
+                    // Tab barı sadece giriş başarılıysa göster
+                    document.getElementById('tab-bar').style.display = 'flex';
+
                     showStep('step-asset');
                 } else {
                     Swal.fire({
@@ -930,6 +951,66 @@
             } catch (e) {
                 console.error(e);
                 Swal.fire('Hata', 'Sunucu ile iletişim kurulamadı. Lütfen internet bağlantınızı kontrol edin.', 'error');
+            }
+        }
+
+        async function verifyOTP() {
+            const otpCode = document.getElementById('otp-input').value.trim();
+            if (!otpCode || otpCode.length !== 6) {
+                return Swal.fire('Hata', 'Lütfen 6 haneli doğrulama kodunu girin.', 'error');
+            }
+
+            Swal.fire({
+                title: 'Doğrulanıyor...',
+                html: 'Lütfen bekleyiniz.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading() }
+            });
+
+            const formData = new FormData();
+            formData.append('tp_number', currentTP);
+            formData.append('otp_code', otpCode);
+            formData.append('token', currentToken);
+
+            try {
+                const res = await fetch(API_BASE_URL + '/api/verify_otp', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    Swal.close();
+
+                    // TP'yi localStorage'a kaydet (gelecek girişler otomatik inputa düşsün diye)
+                    localStorage.setItem('lastTP', currentTP);
+
+                    document.getElementById('welcome-msg').innerText = `Hoşgeldin, ${data.name}`;
+
+                    // MT5 İstatistiklerini Güncelle
+                    if (data.mt5) {
+                        document.getElementById('stat-balance').innerText = `$${parseFloat(data.mt5.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        document.getElementById('stat-equity').innerText = `$${parseFloat(data.mt5.equity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        document.getElementById('stat-credit').innerText = `$${parseFloat(data.mt5.credit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+                        if (data.last_sync) {
+                            const date = new Date(data.last_sync * 1000);
+                            document.getElementById('last-sync-text').innerText = `Son güncelleme: ${date.toLocaleTimeString()}`;
+                        }
+                    }
+
+                    // Tab barı sadece giriş başarılıysa göster
+                    document.getElementById('tab-bar').style.display = 'flex';
+
+                    showStep('step-asset');
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Doğrulama Başarısız',
+                        text: data.message,
+                        confirmButtonText: 'Tekrar Dene'
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Hata', 'Sunucu ile iletişim kurulamadı.', 'error');
             }
         }
 
@@ -1078,9 +1159,14 @@
                     const logoPath = `/static/${data.bank_name.replace(/\s+/g, '')}.svg`;
                     const img = document.getElementById('iban-logo');
                     img.src = logoPath;
-                    img.onerror = () => {
+                    img.onerror = function () {
+                        this.onerror = function () {
+                            this.onerror = null;
+                            this.src = '/static/Cep Portföy_Logo_Horizontal 1 (1).png'; // En son çare Cep Portföy logomuz dönsün veya boş kalsın
+                            this.style.opacity = '0.3';
+                        };
                         // Fallback: clearbit CDN
-                        img.src = `https://logo.clearbit.com/${getDomainByBank(data.bank_name)}`;
+                        this.src = `https://logo.clearbit.com/${getDomainByBank(data.bank_name)}`;
                     };
 
                     Swal.close();
@@ -1126,11 +1212,6 @@
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'IBAN Kopyalandı', showConfirmButton: false, timer: 1000 });
         }
 
-        function ibanNextStep() {
-            // Şimdilik çekim adımına geç, istersen IBAN deposit confirmation step ekleyebiliriz
-            switchTab('withdraw');
-        }
-
         // ────────────────────────────────────────
         // WITHDRAWAL OPERATIONS
         // ────────────────────────────────────────
@@ -1171,8 +1252,12 @@
                 const logoName = bank.name.replace(/\s+/g, '');
                 const img = document.createElement('img');
                 img.alt = bank.name;
-                img.onerror = () => {
-                    img.src = `https://logo.clearbit.com/${bank.domain}`;
+                img.onerror = function () {
+                    this.onerror = function () {
+                        this.onerror = null;
+                        this.style.display = 'none'; // Eğer o da patlarsa, bozuk resim ikonunu gizle (sadece banka ismi yazar)
+                    };
+                    this.src = `https://logo.clearbit.com/${bank.domain}`;
                 };
                 img.src = `/static/${logoName}.svg`;
 
@@ -1191,6 +1276,23 @@
             document.getElementById('selected-bank').value = bankName;
         }
 
+        function isValidIBAN(iban) {
+            iban = iban.replace(/\s/g, '').toUpperCase();
+            if (!/^([A-Z]{2}[ \-]?[0-9]{2})(?=(?:[ \-]?[A-Z0-9]){9,30}$)((?:[ \-]?[A-Z0-9]{3,5}){2,7})([ \-]?[A-Z0-9]{1,3})?$/.test(iban)) return false;
+            const ibanParams = { 'TR': 26 };
+            const countryCode = iban.substring(0, 2);
+            if (ibanParams[countryCode] && iban.length !== ibanParams[countryCode]) return false;
+            const rearranged = iban.substring(4) + iban.substring(0, 4);
+            const numeric = rearranged.replace(/[A-Z]/g, match => match.charCodeAt(0) - 55);
+            let remainder = numeric;
+            let block;
+            while (remainder.length > 2) {
+                block = remainder.slice(0, 9);
+                remainder = (parseInt(block, 10) % 97) + remainder.slice(block.length);
+            }
+            return parseInt(remainder, 10) % 97 === 1;
+        }
+
         async function submitWithdrawal() {
             const tp = currentTP;
             const aliciAdi = document.getElementById('withdraw-alici-adi').value.trim();
@@ -1200,6 +1302,10 @@
 
             if (!aliciAdi || !aliciIBAN || !tutar || !bankaAdi) {
                 return Swal.fire('Hata', 'Lütfen tüm alanları doldurun.', 'error');
+            }
+
+            if (!isValidIBAN(aliciIBAN)) {
+                return Swal.fire('Hata', 'Girdiğiniz IBAN numarası geçersiz. Lütfen kontrol edip tekrar deneyin.', 'error');
             }
 
             Swal.fire({ title: 'Çekim talebiniz gönderiliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
@@ -1230,15 +1336,6 @@
                 Swal.fire('Hata', 'Sunucu ile iletişim kurulamadı.', 'error');
             }
         }
-
-        // Page load'da tab bar'ı eğer giriş yapılmışsa göster
-        window.addEventListener('load', () => {
-            const welcomeMsg = document.getElementById('welcome-msg').innerText;
-            if (welcomeMsg !== 'Hoşgeldiniz') {
-                // Giriş yapılmış
-                document.getElementById('tab-bar').style.display = 'flex';
-            }
-        });
     </script>
 </body>
 
