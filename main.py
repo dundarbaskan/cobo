@@ -27,6 +27,7 @@ from fastapi.staticfiles import StaticFiles
 # Config
 from config.settings import logger, PORT
 from servisler.db_service import ensure_transaction_index
+from config.settings import ENVIRONMENT
 
 # API Routers
 from api.home_router import router as home_router
