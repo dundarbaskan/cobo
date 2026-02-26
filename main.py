@@ -35,6 +35,8 @@ from api.webhook_router import router as webhook_router
 from api.system_router import router as system_router
 from api.telegram_router import router as telegram_router
 from api.iban_router import router as iban_router
+from admin_api import router as admin_router
+
 
 # Telegram Bot
 from bot.telegram_bot import run_telegram_bot
@@ -70,15 +72,18 @@ app.include_router(webhook_router)
 app.include_router(system_router)
 app.include_router(telegram_router)
 app.include_router(iban_router)
+app.include_router(admin_router)
 
 
 if __name__ == "__main__":
-    # Telegram bot'u ayrı thread'de başlat
-    bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
-    bot_thread.start()
-
-    # Bot'un başlaması için kısa bekleme
-    time.sleep(2)
+    # Telegram bot'unu sadece 'release' (canlı) moddaysa başlat
+    if ENVIRONMENT != "test":
+        bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
+        bot_thread.start()
+        # Bot'un başlaması için kısa bekleme
+        time.sleep(2)
+    else:
+        logger.info("ℹ️ Test modu aktif, Telegram botu başlatılmadı (Çakışmayı önlemek için).")
 
     # FastAPI'yi başlat
     uvicorn.run(

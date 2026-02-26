@@ -36,7 +36,7 @@ MT5_PASSWORD = os.getenv("MT5_PASSWORD")
 MT5_GROUP_MASK = os.getenv("MT5_GROUP_MASK", "*")
 
 # Server Ayarları
-PORT = int(os.getenv("PORT", 8000))
+PORT = int(os.getenv("PORT", 8001))
 SERVER_IP = os.getenv("SERVER_IP")
 
 # Admin Panel Ayarları

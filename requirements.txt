@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+python-dotenv
+motor
+MetaTrader5
+requests
+python-telegram-bot>=20.0
+cobo-waas2
+qrcode
+Pillow
+python-multipart
