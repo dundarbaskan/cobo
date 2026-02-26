@@ -1,7 +1,7 @@
 module.exports = {
     apps: [
         {
-            name: "COBO-API-TEST",
+            name: "COBO-API",
             script: "main.py",
             interpreter: "./venv/Scripts/python.exe",
             interpreter_args: "-X utf8",
@@ -26,12 +26,12 @@ module.exports = {
                 PYTHONUTF8: "1"
             },
             // Log Ayarları
-            error_file: "./logs/api-test-error.log",
-            out_file: "./logs/api-test-out.log",
+            error_file: "./logs/api-error.log",
+            out_file: "./logs/api-out.log",
             time: true // Loglara tarih ekler
         },
         {
-            name: "COBO-MT5-TEST",
+            name: "COBO-MT5",
             script: "mt5_worker.py",
             interpreter: "./venv/Scripts/python.exe",
             interpreter_args: "-X utf8",
@@ -40,7 +40,7 @@ module.exports = {
             watch: false,
             // Varsayılan
             env: {
-                ENVIRONMENT: "test",
+                ENVIRONMENT: "release",
                 PYTHONIOENCODING: "utf-8",
                 PYTHONUTF8: "1"
             },
@@ -51,8 +51,8 @@ module.exports = {
                 PYTHONUTF8: "1"
             },
             // Log Ayarları
-            error_file: "./logs/mt5-test-error.log",
-            out_file: "./logs/mt5-test-out.log",
+            error_file: "./logs/mt5-error.log",
+            out_file: "./logs/mt5-out.log",
             time: true
         }
     ]

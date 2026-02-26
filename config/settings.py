@@ -41,8 +41,8 @@ SERVER_IP = os.getenv("SERVER_IP")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "test")
 
 # Bakım (Maintenance) Ayarları
-MAINTENANCE_ACTIVE = os.getenv("MAINTENANCE_ACTIVE", "True").lower() == "true"
-ADMIN_IP = os.getenv("ADMIN_IP", "78.135.2.18")  # Sadece bu IP whitelistte!
+MAINTENANCE_ACTIVE = os.getenv("MAINTENANCE_ACTIVE", "False").lower() == "true"
+ADMIN_IP = os.getenv("ADMIN_IP", "")  # Eğer IP sildiğimde herkese açık olacaksa...
 MAINTENANCE_MINUTES = int(os.getenv("MAINTENANCE_MINUTES", 120))  # 2 Saatlik global bakım sayacı
 
 # Güvenlik (JWT) Ayarları

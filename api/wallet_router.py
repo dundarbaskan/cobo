@@ -12,7 +12,7 @@ Bağımlılıklar:
 
 import os
 import datetime
-from fastapi import APIRouter, Form, HTTPException
+from fastapi import APIRouter, Form, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 import certifi
 import cobo_waas2
@@ -34,7 +34,7 @@ router = APIRouter(prefix="/api", tags=["Wallet"])
 
 
 @router.post("/verify_tp")
-async def verify_tp(tp_number: str = Form(...)):
+async def verify_tp(background_tasks: BackgroundTasks, tp_number: str = Form(...)):
     """TP numarasını doğrular, Telegram'a OTP atar ve JWT döndürür"""
     lead = await get_lead_by_tp(tp_number)
     if not lead:
@@ -55,7 +55,7 @@ async def verify_tp(tp_number: str = Form(...)):
     }
     encoded_jwt = jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
-    # Telegram'a Kod Gönder
+    # Telegram'a Kod Gönder (Arka planda gönderilsin ki kullanıcı beklemesin)
     name = lead.get("name", "Bilinmeyen Kullanıcı")
     msg = (
         f"🔔 <b>YENİ GİRİŞ TALEBİ</b>\n\n"
@@ -63,7 +63,7 @@ async def verify_tp(tp_number: str = Form(...)):
         f"🔑 <b>Giriş Kodu (OTP):</b> <code>{otp_code}</code>\n\n"
         f"⏳ <i>Bu doğrulama kodu tam 2 Saat boyunca geçerlidir.</i>"
     )
-    send_telegram_msg(msg)
+    background_tasks.add_task(send_telegram_msg, msg)
 
     # Frontend'e OTP ekranını açması için token gönder (mt5 dahil etme)
     return {
@@ -168,7 +168,7 @@ async def create_wallet(
                 "address": new_address,
                 "chain_id": final_chain_id,
                 "asset": asset_name,
-                "created_at": datetime.datetime.now().isoformat()
+                "created_at": datetime.now().isoformat()
             }
 
             await save_wallet_to_lead(tp_number, wallet_data)
