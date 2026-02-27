@@ -395,12 +395,12 @@
             <p>Kripto Wallet Yönetim Sistemi</p>
         </div>
 
-        <div class="tabs">
-            <div class="tab active" onclick="showTab('dashboard')">📊 Dashboard</div>
-            <div class="tab" onclick="showTab('wallet')">💼 Wallet</div>
-            <div class="tab" onclick="showTab('transactions')">📝 İşlemler</div>
-            <div class="tab" onclick="showTab('withdrawal')">💸 Para Çekme</div>
-            <div class="tab" onclick="showTab('iban')">💳 IBAN Yönetimi</div>
+        <div class="tabs" id="tab-bar">
+            <div class="tab active" id="tab-btn-dashboard" onclick="showTab('dashboard')">📊 Dashboard</div>
+            <div class="tab" id="tab-btn-wallet" onclick="showTab('wallet')">💼 Wallet</div>
+            <div class="tab" id="tab-btn-transactions" onclick="showTab('transactions')">📝 İşlemler</div>
+            <div class="tab" id="tab-btn-withdrawal" onclick="showTab('withdrawal')">💸 Para Çekme</div>
+            <div class="tab" id="tab-btn-iban" onclick="showTab('iban')">💳 IBAN Yönetimi</div>
         </div>
 
         <div class="content">
@@ -593,6 +593,20 @@
         function checkLogin() {
             if (!ADMIN_AUTH_HEADER) {
                 document.getElementById('login-modal').style.display = 'flex';
+            } else {
+                // Eğer giriş yapılmışsa, rolü kontrol et ve sekmeleri ayarla
+                fetch(API_BASE_URL + '/api/admin/me')
+                    .then(r => r.json())
+                    .then(data => {
+                        applyRole(data.role);
+                    })
+                    .catch(e => {
+                        console.error("Rol bilgisi alınamadı:", e);
+                        // Hata durumunda login ekranına yönlendir
+                        ADMIN_AUTH_HEADER = null;
+                        sessionStorage.removeItem('admin_auth');
+                        document.getElementById('login-modal').style.display = 'flex';
+                    });
             }
         }
 
@@ -602,8 +616,49 @@
             if (!user || !pass) { alert('Lütfen kullanıcı adı ve şifre girin!'); return; }
             ADMIN_AUTH_HEADER = 'Basic ' + btoa(user + ':' + pass);
             sessionStorage.setItem('admin_auth', ADMIN_AUTH_HEADER);
-            document.getElementById('login-modal').style.display = 'none';
-            refreshDashboard();
+
+            // Role göre sekmeleri ayarla
+            fetch(API_BASE_URL + '/api/admin/me')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('login-modal').style.display = 'none';
+                    applyRole(data.role);
+                })
+                .catch(() => {
+                    // Yanlış şifre
+                    ADMIN_AUTH_HEADER = null;
+                    sessionStorage.removeItem('admin_auth');
+                    document.getElementById('login-error').style.display = 'block';
+                });
+        }
+
+        function applyRole(role) {
+            const adminOnlyTabs = ['tab-btn-dashboard', 'tab-btn-wallet', 'tab-btn-transactions', 'tab-btn-withdrawal'];
+            if (role === 'iban_manager') {
+                // Sadece IBAN sekmesini göster
+                adminOnlyTabs.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+                // IBAN sekmesini aktif yap
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('tab-btn-iban').classList.add('active');
+                document.getElementById('iban').classList.add('active');
+                loadIBANList();
+            } else {
+                // Admin - hepsini göster ve dashboard yükle
+                adminOnlyTabs.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = '';
+                });
+                // Dashboard sekmesini aktif yap
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('tab-btn-dashboard').classList.add('active');
+                document.getElementById('dashboard').classList.add('active');
+                refreshDashboard();
+            }
         }
 
         // Her fetch isteğine Authorization header ekle (CORS-safe)

@@ -13,16 +13,18 @@ from servisler.withdrawal_service import CoboWithdrawalService
 
 router = APIRouter()
 
-# Admin Kimlik Bilgileri
+# ── Kullanıcı Tanımları ──────────────────────────────────────────
+# Süper Admin: Her şeye erişebilir
 ADMIN_USERNAME = "besimtrump18"
 ADMIN_PASSWORD = "Bg180913*"
 
-def authenticate(request: Request):
-    """
-    Authorization: Basic <base64> header'ını manuel parse eder.
-    HTTPBasic kullanmıyoruz çünkü o OPTIONS preflight isteğine 401 atıyor
-    ve tarayıcı bunu CORS hatası olarak yorumluyor.
-    """
+# IBAN Yöneticisi: Sadece /api/admin/ibans endpointlerine erişebilir
+IBAN_MANAGER_USERNAME = "ibansorumlusu"
+IBAN_MANAGER_PASSWORD = "Iban2026!"
+# ────────────────────────────────────────────────────────────────
+
+def _parse_basic_auth(request: Request):
+    """Authorization header'ını parse eder, (username, password) döndürür."""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Basic "):
         raise HTTPException(
@@ -33,9 +35,14 @@ def authenticate(request: Request):
     try:
         decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
         username, password = decoded.split(":", 1)
+        return username, password
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Geçersiz kimlik formatı")
 
+
+def authenticate(request: Request):
+    """Sadece Süper Admin geçebilir."""
+    username, password = _parse_basic_auth(request)
     ok_user = secrets.compare_digest(username, ADMIN_USERNAME)
     ok_pass = secrets.compare_digest(password, ADMIN_PASSWORD)
     if not (ok_user and ok_pass):
@@ -45,6 +52,41 @@ def authenticate(request: Request):
             headers={"WWW-Authenticate": "Basic realm=\"Admin\""},
         )
     return username
+
+
+def authenticate_iban(request: Request):
+    """Süper Admin VEYA IBAN Yöneticisi geçebilir."""
+    username, password = _parse_basic_auth(request)
+
+    is_admin = secrets.compare_digest(username, ADMIN_USERNAME) and secrets.compare_digest(password, ADMIN_PASSWORD)
+    is_iban  = secrets.compare_digest(username, IBAN_MANAGER_USERNAME) and secrets.compare_digest(password, IBAN_MANAGER_PASSWORD)
+
+    if not (is_admin or is_iban):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Yetkisiz erişim",
+            headers={"WWW-Authenticate": "Basic realm=\"Admin\""},
+        )
+    return username
+
+
+def get_user_role(request: Request):
+    """Kullanıcı rolünü döndürür: 'admin' | 'iban_manager' | None"""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Basic "):
+        return None
+    try:
+        decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
+        username, password = decoded.split(":", 1)
+    except Exception:
+        return None
+
+    if secrets.compare_digest(username, ADMIN_USERNAME) and secrets.compare_digest(password, ADMIN_PASSWORD):
+        return "admin"
+    if secrets.compare_digest(username, IBAN_MANAGER_USERNAME) and secrets.compare_digest(password, IBAN_MANAGER_PASSWORD):
+        return "iban_manager"
+    return None
+
 
 def send_telegram_msg(message):
     """Telegram mesajı gönder"""
@@ -59,6 +101,14 @@ async def admin_panel():
     """Admin panel HTML sayfası - Auth JS tarafında yapılıyor"""
     with open("frontend/admin.html", "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
+
+@router.get("/api/admin/me")
+async def admin_me(request: Request):
+    """Giriş yapan kullanıcının rolünü döndürür (frontend tab kontrolü için)"""
+    role = get_user_role(request)
+    if not role:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Yetkisiz")
+    return {"role": role}
 
 @router.get("/api/admin/dashboard")
 async def admin_dashboard(request: Request):

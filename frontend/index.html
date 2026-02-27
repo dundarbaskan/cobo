@@ -577,26 +577,7 @@
                 </button>
             </div>
 
-            <!-- STEP 1.5: OTP GİRİŞİ -->
-            <div id="step-otp" class="step">
-                <div style="text-align: left; margin-bottom: 1.5rem;">
-                    <h3 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Güvenlik Doğrulaması</h3>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Telegram hesabınıza
-                        gönderilen 6 haneli tek kullanımlık (OTP) kodu giriniz.</p>
-                </div>
-                <div class="input-group">
-                    <label>Doğrulama Kodu</label>
-                    <input type="text" id="otp-input" placeholder="Örn: 847291" maxlength="6"
-                        style="text-align: center; font-size: 1.5rem; letter-spacing: 5px;">
-                </div>
-                <button class="btn btn-accent" onclick="verifyOTP()">
-                    <span>Doğrula ve Giriş Yap</span>
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </button>
-            </div>
+
 
             <!-- STEP 2: ASSET SELECTION -->
             <div id="step-asset" class="step">
@@ -708,11 +689,20 @@
                 </div>
 
                 <div class="iban-card">
-                    <img id="iban-logo" class="iban-bank-logo" src="/static/iconLogo.png" alt="Banka Logo">
+                    <img id="iban-logo" class="iban-bank-logo" src="/static/favicon.png" alt="Banka Logo">
                     <div class="iban-label">IBAN</div>
                     <div class="iban-value" id="iban-display">TR00 0000 0000 0000 0000 0000</div>
-                    <div class="iban-holder">
+                    <div class="iban-holder"
+                        style="display: flex; align-items: center; justify-content: center; gap: 8px;">
                         <strong id="iban-holder-display">Hesap Sahibi Adı</strong>
+                        <button onclick="copyHolderName()" title="İsmi Kopyala"
+                            style="background: rgba(212,175,55,0.15); border: 1px solid var(--accent); border-radius: 6px; padding: 3px 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--accent); font-weight: 600;">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            Kopyala
+                        </button>
                     </div>
                 </div>
 
@@ -832,6 +822,13 @@
         let selectedAsset = "";
         const API_BASE_URL = "https://srv.cepteportfoy.com";
 
+        function copyHolderName() {
+            const name = document.getElementById('iban-holder-display').innerText;
+            navigator.clipboard.writeText(name).then(() => {
+                Swal.fire({ icon: 'success', title: 'Kopyalandı!', text: name, timer: 1500, showConfirmButton: false });
+            });
+        }
+
         // ── URL Parametresi ile Otomatik Giriş ──
         window.addEventListener('DOMContentLoaded', () => {
             let tpNumber = null;
@@ -895,7 +892,6 @@
             const tp = document.getElementById('tp-input').value;
             if (!tp) return Swal.fire('Hata', 'Lütfen TP numaranızı girin.', 'error');
 
-            // Loading Başlat
             Swal.fire({
                 title: 'Kontrol Ediliyor...',
                 html: 'Lütfen bekleyiniz, hesap bilgileriniz kontrol ediliyor.',
@@ -910,22 +906,13 @@
                 const res = await fetch(API_BASE_URL + '/api/verify_tp', { method: 'POST', body: formData });
                 const data = await res.json();
 
-                if (data.status === 'requires_otp') {
+                if (data.status === 'success') {
                     Swal.close();
-                    currentToken = data.token;
-                    currentTP = tp; // Geçici olarak al
-                    showStep('step-otp');
-                } else if (data.status === 'success') {
-                    Swal.close(); // Loading'i kapat
-
                     currentTP = tp;
-
-                    // TP'yi localStorage'a kaydet (gelecek girişler için)
                     localStorage.setItem('lastTP', tp);
 
                     document.getElementById('welcome-msg').innerText = `Hoşgeldin, ${data.name}`;
 
-                    // MT5 İstatistiklerini Güncelle
                     if (data.mt5) {
                         document.getElementById('stat-balance').innerText = `$${parseFloat(data.mt5.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                         document.getElementById('stat-equity').innerText = `$${parseFloat(data.mt5.equity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -937,9 +924,7 @@
                         }
                     }
 
-                    // Tab barı sadece giriş başarılıysa göster
                     document.getElementById('tab-bar').style.display = 'flex';
-
                     showStep('step-asset');
                 } else {
                     Swal.fire({
@@ -955,65 +940,6 @@
             }
         }
 
-        async function verifyOTP() {
-            const otpCode = document.getElementById('otp-input').value.trim();
-            if (!otpCode || otpCode.length !== 6) {
-                return Swal.fire('Hata', 'Lütfen 6 haneli doğrulama kodunu girin.', 'error');
-            }
-
-            Swal.fire({
-                title: 'Doğrulanıyor...',
-                html: 'Lütfen bekleyiniz.',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading() }
-            });
-
-            const formData = new FormData();
-            formData.append('tp_number', currentTP);
-            formData.append('otp_code', otpCode);
-            formData.append('token', currentToken);
-
-            try {
-                const res = await fetch(API_BASE_URL + '/api/verify_otp', { method: 'POST', body: formData });
-                const data = await res.json();
-
-                if (data.status === 'success') {
-                    Swal.close();
-
-                    // TP'yi localStorage'a kaydet (gelecek girişler otomatik inputa düşsün diye)
-                    localStorage.setItem('lastTP', currentTP);
-
-                    document.getElementById('welcome-msg').innerText = `Hoşgeldin, ${data.name}`;
-
-                    // MT5 İstatistiklerini Güncelle
-                    if (data.mt5) {
-                        document.getElementById('stat-balance').innerText = `$${parseFloat(data.mt5.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                        document.getElementById('stat-equity').innerText = `$${parseFloat(data.mt5.equity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                        document.getElementById('stat-credit').innerText = `$${parseFloat(data.mt5.credit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-                        if (data.last_sync) {
-                            const date = new Date(data.last_sync * 1000);
-                            document.getElementById('last-sync-text').innerText = `Son güncelleme: ${date.toLocaleTimeString()}`;
-                        }
-                    }
-
-                    // Tab barı sadece giriş başarılıysa göster
-                    document.getElementById('tab-bar').style.display = 'flex';
-
-                    showStep('step-asset');
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Doğrulama Başarısız',
-                        text: data.message,
-                        confirmButtonText: 'Tekrar Dene'
-                    });
-                }
-            } catch (e) {
-                console.error(e);
-                Swal.fire('Hata', 'Sunucu ile iletişim kurulamadı.', 'error');
-            }
-        }
 
         function selectAsset(asset, el) {
             selectedAsset = asset;

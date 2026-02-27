@@ -129,23 +129,25 @@ async def iban_withdrawal(
 # ─────────────────────────────────────────
 
 @router.get("/api/admin/ibans")
-async def admin_list_ibans(username: str = Depends(authenticate)):
+async def admin_list_ibans(request: Request):
     """Tüm IBAN kayıtlarını döner."""
+    authenticate_iban(request)
     ibans = await get_all_ibans()
     return {"status": "success", "ibans": ibans}
 
 
 @router.post("/api/admin/ibans")
 async def admin_add_iban(
+    request: Request,
     bank_name: str = Form(...),
     iban: str = Form(...),
     account_holder: str = Form(...),
-    username: str = Depends(authenticate),
 ):
     """Yeni IBAN ekler (pasif olarak)."""
+    authenticate_iban(request)
     iban_data = {
         "bank_name": bank_name,
-        "iban": iban.upper().replace(" ", "").replace(" ", ""),
+        "iban": iban.upper().replace(" ", "").replace("\u00a0", ""),
         "account_holder": account_holder,
     }
     new_id = await save_iban(iban_data)
@@ -154,8 +156,9 @@ async def admin_add_iban(
 
 
 @router.put("/api/admin/ibans/{iban_id}/activate")
-async def admin_activate_iban(iban_id: str, username: str = Depends(authenticate)):
+async def admin_activate_iban(iban_id: str, request: Request):
     """Belirtilen IBAN'ı aktif eder. Diğerleri otomatik pasife alınır."""
+    authenticate_iban(request)
     try:
         await set_iban_active(iban_id)
         logger.info(f"✅ IBAN aktif edildi: {iban_id}")
@@ -166,8 +169,9 @@ async def admin_activate_iban(iban_id: str, username: str = Depends(authenticate
 
 
 @router.put("/api/admin/ibans/{iban_id}/deactivate")
-async def admin_deactivate_iban(iban_id: str, username: str = Depends(authenticate)):
+async def admin_deactivate_iban(iban_id: str, request: Request):
     """Belirtilen IBAN'ı pasif eder."""
+    authenticate_iban(request)
     try:
         await set_iban_inactive(iban_id)
         logger.info(f"⚫ IBAN pasif edildi: {iban_id}")
@@ -178,8 +182,9 @@ async def admin_deactivate_iban(iban_id: str, username: str = Depends(authentica
 
 
 @router.delete("/api/admin/ibans/{iban_id}")
-async def admin_delete_iban(iban_id: str, username: str = Depends(authenticate)):
+async def admin_delete_iban(iban_id: str, request: Request):
     """Belirtilen IBAN kaydını siler."""
+    authenticate_iban(request)
     try:
         await delete_iban(iban_id)
         logger.info(f"🗑 IBAN silindi: {iban_id}")
@@ -187,3 +192,4 @@ async def admin_delete_iban(iban_id: str, username: str = Depends(authenticate))
     except Exception as e:
         logger.error(f"❌ IBAN silme hatası: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
