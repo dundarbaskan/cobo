@@ -2,6 +2,7 @@ import os
 import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
+from pymongo import ReturnDocument
 
 from pathlib import Path
 
@@ -136,7 +137,7 @@ async def update_financial_stats(tp_number, amount, is_deposit=True):
     result = await cobo_collection.find_one_and_update(
         {"tp_number": str(tp_number)},
         {"$inc": {field: amount}},
-        return_document=True,
+        return_document=ReturnDocument.AFTER,
         upsert=True
     )
     return result

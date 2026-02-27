@@ -7,24 +7,32 @@ def coin_parser(symbol, amount):
     amount: Gelen miktar
     """
     # CryptoCompare API kullanarak kripto parayı USD'ye çevirir.
-    # 1. Verileri temizle
+    # 1. Verileri temizle (Örn: "1.5e-06" gibi bilimsel sayıları anlar)
     symbol = str(symbol).upper().strip()
-    amount = float(amount)
-    
-    # Varsayılan değerler
+    try:
+        amount = float(amount)
+    except Exception:
+        amount = 0.0
+
+    # 2. Gerçek coin adını ayıkla (Örn: "ERC20_ETH" geldiğinde "ETH"yi çeker)
+    clean_symbol = symbol
+    for coin in ["USDT", "USDC", "TRX", "TRON", "ETH", "BTC", "LTC", "SOL", "MATIC", "BNB", "XRP", "ADA", "DOT"]:
+        if coin in symbol:
+            clean_symbol = coin
+            break
+
+    # CryptoCompare TRON'u TRX olarak tanır
+    if clean_symbol == "TRON":
+        clean_symbol = "TRX"
+        
     usd_amount = amount 
     
-    # 2. Eğer zaten USDT ise API'ye gitmeye gerek yok
-    if symbol == "USDT":
+    # 3. Zaten Stabil coin ise API'yi yorma, 1:1 geçir
+    if clean_symbol in ["USDT", "USDC"]:
         usd_amount = amount
     else:
         try:
-            # CryptoCompare de Binance gibi TRX kısaltmasını kullanır.
-            # Cobo'dan gelen 'TRON' verisini 'TRX' yapıyoruz.
-            clean_symbol = "TRX" if symbol == "TRON" else symbol
-            
             # CryptoCompare Single Price API Endpoint
-            # fsym: Hangi coin, tsyms: Hangi para birimi
             url = f"https://min-api.cryptocompare.com/data/price?fsym={clean_symbol}&tsyms=USD"
             
             response = requests.get(url, timeout=5)
@@ -32,7 +40,6 @@ def coin_parser(symbol, amount):
             
             data = response.json()
             
-            # CryptoCompare cevabı: {"USD": 0.1234} formatındadır.
             if "USD" in data:
                 price = float(data['USD'])
                 usd_amount = amount * price
@@ -41,7 +48,6 @@ def coin_parser(symbol, amount):
             
         except Exception as e:
             print(f"Kur çekilirken hata oluştu ({symbol}): {e}")
-            # Hata durumunda usd_amount ham miktar olarak kalır
             usd_amount = amount 
 
     # 3. İkili Return formatı (Senin istediğin liste yapısı)
