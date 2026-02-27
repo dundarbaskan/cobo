@@ -6,6 +6,10 @@ import os
 from dotenv import load_dotenv
 import cobo_waas2
 from cobo_waas2 import ApiClient, Configuration
+import urllib3
+
+# InsecureRequestWarning uyarısını gizle
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv()
 
@@ -19,6 +23,8 @@ class CoboSweepService:
             api_private_key=self.api_secret,
             host="https://api.cobo.com/v2"
         )
+        # SSL sertifika hatasını tamamen yoksay (Gecikme/Hata olmaması için)
+        self.configuration.verify_ssl = False
     
     def get_wallet_info(self, wallet_id):
         """

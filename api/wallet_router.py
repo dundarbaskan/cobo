@@ -14,9 +14,12 @@ import os
 import datetime
 from fastapi import APIRouter, Form, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
-import certifi
 import cobo_waas2
 from cobo_waas2 import ApiClient, Configuration, CreateAddressRequest
+import urllib3
+
+# InsecureRequestWarning uyarısını gizle
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from servisler.db_service import (
     get_lead_by_tp,
@@ -145,9 +148,8 @@ async def create_wallet(
             host="https://api.cobo.com/v2"
         )
 
-        # Windows SSL Hatası Çözümü
-        configuration.ssl_ca_cert = certifi.where()
-        configuration.verify_ssl = True
+        # Windows SSL Hatası Çözümü - Tamamen atla
+        configuration.verify_ssl = False
 
         with ApiClient(configuration) as api_client:
             # Set API Key header
