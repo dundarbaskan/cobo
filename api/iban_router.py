@@ -21,7 +21,7 @@ Bağımlılıklar:
 """
 
 import logging
-from fastapi import APIRouter, Form, Depends, HTTPException
+from fastapi import APIRouter, Form, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from servisler.db_service import (
