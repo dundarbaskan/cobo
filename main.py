@@ -23,7 +23,6 @@ import time
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 
 # Config
 from config.settings import logger, PORT
@@ -46,17 +45,6 @@ from bot.telegram_bot import run_telegram_bot
 # FastAPI App
 app = FastAPI(title="COBO API", version="2.0")
 
-# CORS Middleware (Tarayıcı şifre politikasını ve çapraz originlere izin ver)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://srv.cepteportfoy.com", 
-        "https://odeme.cepteportfoy.com"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Startup Event
 @app.on_event("startup")

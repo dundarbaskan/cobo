@@ -37,14 +37,16 @@ def send_telegram_msg(message):
     requests.post(url, json={"chat_id": chat_id, "text": message, "parse_mode": "HTML"})
 
 @router.get("/admin")
-async def admin_panel(username: str = Depends(authenticate)):
+async def admin_panel(request: Request):
     """Admin panel HTML sayfası"""
+    authenticate(request)
     with open("frontend/admin.html", "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
 
 @router.get("/api/admin/dashboard")
-async def admin_dashboard(username: str = Depends(authenticate)):
+async def admin_dashboard(request: Request):
     """Dashboard istatistikleri"""
+    authenticate(request)
     try:
         sweep_service = CoboSweepService()
         wallet_id = os.getenv("COBO_WALLET_ID")
@@ -73,8 +75,9 @@ async def admin_dashboard(username: str = Depends(authenticate)):
         return {"success": False, "error": str(e)}
 
 @router.get("/api/admin/wallet")
-async def admin_wallet(username: str = Depends(authenticate)):
+async def admin_wallet(request: Request):
     """Wallet bilgileri"""
+    authenticate(request)
     try:
         sweep_service = CoboSweepService()
         wallet_id = os.getenv("COBO_WALLET_ID")
@@ -89,8 +92,9 @@ async def admin_wallet(username: str = Depends(authenticate)):
         return {"success": False, "error": str(e)}
 
 @router.get("/api/admin/addresses")
-async def admin_addresses(username: str = Depends(authenticate)):
+async def admin_addresses(request: Request):
     """Adres listesi"""
+    authenticate(request)
     try:
         sweep_service = CoboSweepService()
         wallet_id = os.getenv("COBO_WALLET_ID")
@@ -106,8 +110,9 @@ async def admin_addresses(username: str = Depends(authenticate)):
         return {"success": False, "error": str(e)}
 
 @router.get("/api/admin/transactions")
-async def admin_transactions(type: str = None, username: str = Depends(authenticate)):
+async def admin_transactions(request: Request, type: str = None):
     """İşlem listesi"""
+    authenticate(request)
     try:
         sweep_service = CoboSweepService()
         wallet_id = os.getenv("COBO_WALLET_ID")
@@ -161,8 +166,9 @@ async def admin_transactions(type: str = None, username: str = Depends(authentic
         return {"success": False, "error": str(e)}
 
 @router.post("/api/admin/withdrawal")
-async def admin_withdrawal(request: Request, username: str = Depends(authenticate)):
+async def admin_withdrawal(request: Request):
     """Para çekme işlemi"""
+    authenticate(request)
     try:
         data = await request.json()
         
@@ -190,8 +196,9 @@ async def admin_withdrawal(request: Request, username: str = Depends(authenticat
         return {"success": False, "error": str(e)}
 
 @router.post("/api/admin/sweep")
-async def admin_sweep(request: Request, username: str = Depends(authenticate)):
+async def admin_sweep(request: Request):
     """Tüm bakiyeleri tek bir adrese topla (Sweep)"""
+    authenticate(request)
     try:
         data = await request.json()
         main_address = data.get("main_address")
