@@ -55,10 +55,13 @@ class BaseVolumeFilter:
             # 2. Kur Bilgisini Al
             coin_data = BaseVolumeFilter.RATES.get(symbol)
             
-            # Bilinmeyen coin ise (Listede yoksa)
-            # Güvenlik politikası: Bilinmeyen coinleri varsayılan olarak geçiriyoruz ama logluyoruz
-            # Veya strict modda engelleyebiliriz. Burada kullanıcı "fake/spam tokenları main.py'de engelliyor" zaten.
-            # Main.py'deki ALLOWED_TOKENS listesindekiler zaten burada tanımlı.
+            # Tam eşleşme yoksa, içinde geçiyor mu diye bak (Örn: "ERC20_ETH" -> "ETH")
+            if not coin_data:
+                for key, data in BaseVolumeFilter.RATES.items():
+                    if key in symbol:
+                        coin_data = data
+                        break
+            
             if not coin_data:
                 # Fallback: Eğer listede yoksa ve Stablecoin ise (örn BUSD) 1:1 kabul et
                 if "USD" in symbol:
@@ -66,7 +69,6 @@ class BaseVolumeFilter:
                 else:
                     logger.warning(f"⚠️ [VolumeFilter] Tanımsız Coin: {symbol} - Kur 0 kabul edilecek.")
                     usd_rate = 0.0
-
             else:
                 usd_rate = coin_data["usd_rate"]
 
@@ -93,12 +95,15 @@ class BaseVolumeFilter:
     @staticmethod
     def _log_block(symbol, amount, usd_value, limit, tx_id):
         """Reddedilen işlemler için kurumsal log formatı"""
+        amount_str = f"{amount:.10f}".rstrip('0').rstrip('.')
+        if not amount_str: amount_str = "0"
+        
         logger.warning(
             f"\n⛔ ------------------[ FİLTRE ENGELİ ]------------------ ⛔"
             f"\n🛑 İŞLEM REDDEDİLDİ: Minimum Tutarın Altında (Manuel Liste)"
             f"\n🆔 Tx ID        : {tx_id}"
             f"\n💎 Varlık       : {symbol}"
-            f"\n💰 Gelen Miktar : {amount}"
+            f"\n💰 Gelen Miktar : {amount_str}"
             f"\n💵 USD Değeri   : {usd_value:.4f} $"
             f"\n📉 Limit (Min)  : {limit} $"
             f"\n🛡️ Aksiyon      : BLOCKED (Manuel Limit Kontrolü)"
