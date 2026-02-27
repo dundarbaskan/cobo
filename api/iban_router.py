@@ -34,7 +34,7 @@ from servisler.db_service import (
     get_lead_by_tp,
 )
 from servisler.telegram_service import send_telegram_msg
-from admin_api import authenticate
+from admin_api import authenticate, authenticate_iban
 
 logger = logging.getLogger(__name__)
 
