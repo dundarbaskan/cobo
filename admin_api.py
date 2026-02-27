@@ -29,8 +29,7 @@ def _parse_basic_auth(request: Request):
     if not auth_header.startswith("Basic "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Kimlik doğrulaması gerekli",
-            headers={"WWW-Authenticate": "Basic realm=\"Admin\""},
+            detail="Kimlik doğrulaması gerekli"
         )
     try:
         decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
@@ -48,8 +47,7 @@ def authenticate(request: Request):
     if not (ok_user and ok_pass):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Hatalı kullanıcı adı veya şifre",
-            headers={"WWW-Authenticate": "Basic realm=\"Admin\""},
+            detail="Hatalı kullanıcı adı veya şifre"
         )
     return username
 
@@ -64,8 +62,7 @@ def authenticate_iban(request: Request):
     if not (is_admin or is_iban):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Yetkisiz erişim",
-            headers={"WWW-Authenticate": "Basic realm=\"Admin\""},
+            detail="Yetkisiz erişim"
         )
     return username
 

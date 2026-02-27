@@ -688,31 +688,48 @@
                     </button>
                 </div>
 
-                <div class="iban-card">
-                    <img id="iban-logo" class="iban-bank-logo" src="/static/favicon.png" alt="Banka Logo">
-                    <div class="iban-label">IBAN</div>
-                    <div class="iban-value" id="iban-display">TR00 0000 0000 0000 0000 0000</div>
-                    <div class="iban-holder"
-                        style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <strong id="iban-holder-display">Hesap Sahibi Adı</strong>
-                        <button onclick="copyHolderName()" title="İsmi Kopyala"
-                            style="background: rgba(212,175,55,0.15); border: 1px solid var(--accent); border-radius: 6px; padding: 3px 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--accent); font-weight: 600;">
-                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="iban-card" style="padding: 1.5rem; text-align: left;">
+                    <div
+                        style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; justify-content: center;">
+                        <img id="iban-logo" class="iban-bank-logo" src="/static/favicon.png" alt="Banka Logo"
+                            style="margin: 0; width: 32px; height: 32px;">
+                        <h4 style="margin: 0; color: var(--primary); font-weight: 700; font-size: 1.2rem;">Banka
+                            Transferi</h4>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">Alıcı Adı Soyadı
+                        </div>
+                        <div onclick="copyHolderName()"
+                            style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; cursor: pointer; transition: 0.2s;"
+                            onmouseover="this.style.borderColor='var(--accent)'"
+                            onmouseout="this.style.borderColor='#e2e8f0'" title="İsmi Kopyala">
+                            <strong id="iban-holder-display" style="font-size: 0.95rem; color: var(--text);">Hesap
+                                Sahibi Adı</strong>
+                            <svg width="18" height="18" fill="none" stroke="var(--accent)" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                             </svg>
-                            Kopyala
-                        </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">IBAN Numarası
+                        </div>
+                        <div onclick="copyIBAN()"
+                            style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; cursor: pointer; transition: 0.2s;"
+                            onmouseover="this.style.borderColor='var(--accent)'"
+                            onmouseout="this.style.borderColor='#e2e8f0'" title="IBAN Kopyala">
+                            <span id="iban-display"
+                                style="font-family: monospace; font-size: 1.1rem; font-weight: 600; color: var(--text); letter-spacing: 1px;">TR00
+                                0000 0000 0000 0000 0000</span>
+                            <svg width="18" height="18" fill="none" stroke="var(--accent)" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                        </div>
                     </div>
                 </div>
-
-                <button class="btn-copy-iban" onclick="copyIBAN()">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <span>IBAN Kopyala</span>
-                </button>
 
                 <div
                     style="background: #e8f5e9; border-radius: 12px; padding: 1rem; margin: 1.5rem 0; text-align: left; border-left: 4px solid var(--success);">
