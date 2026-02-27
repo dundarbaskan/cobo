@@ -2,31 +2,49 @@
 Admin Panel API Endpoints
 Bu dosyayı main.py'ye import edin
 """
-from fastapi import APIRouter, Request, Depends, HTTPException, status
-from fastapi.responses import HTMLResponse
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+import base64
 import secrets
 import os
+
+from fastapi import APIRouter, Request, Depends, HTTPException, status
+from fastapi.responses import HTMLResponse, JSONResponse
 from servisler.sweep_service import CoboSweepService
 from servisler.withdrawal_service import CoboWithdrawalService
 
 router = APIRouter()
-security = HTTPBasic()
 
 # Admin Kimlik Bilgileri
 ADMIN_USERNAME = "besimtrump18"
 ADMIN_PASSWORD = "Bg180913*"
 
-def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
-    correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
-    correct_password = secrets.compare_digest(credentials.password, ADMIN_PASSWORD)
-    if not (correct_username and correct_password):
+def authenticate(request: Request):
+    """
+    Authorization: Basic <base64> header'ını manuel parse eder.
+    HTTPBasic kullanmıyoruz çünkü o OPTIONS preflight isteğine 401 atıyor
+    ve tarayıcı bunu CORS hatası olarak yorumluyor.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Basic "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Kimlik doğrulaması gerekli",
+            headers={"WWW-Authenticate": "Basic realm=\"Admin\""},
+        )
+    try:
+        decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
+        username, password = decoded.split(":", 1)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Geçersiz kimlik formatı")
+
+    ok_user = secrets.compare_digest(username, ADMIN_USERNAME)
+    ok_pass = secrets.compare_digest(password, ADMIN_PASSWORD)
+    if not (ok_user and ok_pass):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Hatalı kullanıcı adı veya şifre",
-            headers={"WWW-Authenticate": "Basic"},
+            headers={"WWW-Authenticate": "Basic realm=\"Admin\""},
         )
-    return credentials.username
+    return username
 
 def send_telegram_msg(message):
     """Telegram mesajı gönder"""
