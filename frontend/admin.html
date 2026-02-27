@@ -319,10 +319,76 @@
                 transform: rotate(360deg);
             }
         }
+
+        /* Login Modal */
+        #login-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            width: 360px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+
+        .login-box h2 {
+            margin-bottom: 24px;
+            color: #4a5568;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        #login-error {
+            color: #e53e3e;
+            margin-top: 12px;
+            display: none;
+            font-size: 14px;
+        }
     </style>
 </head>
 
-<body>
+<body onload="checkLogin()">
+
+    <!-- Login Modal -->
+    <div id="login-modal">
+        <div class="login-box">
+            <h2>🔐 Admin Girişi</h2>
+            <input id="login-user" type="text" placeholder="Kullanıcı Adı" />
+            <input id="login-pass" type="password" placeholder="Şifre" onkeydown="if(event.key==='Enter') doLogin()" />
+            <button onclick="doLogin()">Giriş Yap</button>
+            <div id="login-error">❌ Kullanıcı adı veya şifre hatalı!</div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>🏦 Cobo Admin Panel</h1>
@@ -520,16 +586,44 @@
         // Global config
         const API_BASE_URL = "https://srv.cepteportfoy.com";
 
-        // Tarayıcının önbellekte tuttuğu Admin Basic-Auth şifresini ajax/fetch isteklerine otomatik ekle
-        const originalFetch = window.fetch;
-        window.fetch = function () {
-            let [resource, config] = arguments;
-            if (!config) {
-                config = {};
+        // Admin kimlik bilgilerini hafızada tut
+        let ADMIN_AUTH_HEADER = sessionStorage.getItem('admin_auth') || null;
+
+        // Eğer giriş yapılmamışsa login modal göster
+        function checkLogin() {
+            if (!ADMIN_AUTH_HEADER) {
+                document.getElementById('login-modal').style.display = 'flex';
             }
-            // Çapraz veya aynı origin fark etmeksizin Authorization headarlarını gönder:
-            config.credentials = 'include';
-            return originalFetch(resource, config);
+        }
+
+        function doLogin() {
+            const user = document.getElementById('login-user').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+            if (!user || !pass) { alert('Lütfen kullanıcı adı ve şifre girin!'); return; }
+            ADMIN_AUTH_HEADER = 'Basic ' + btoa(user + ':' + pass);
+            sessionStorage.setItem('admin_auth', ADMIN_AUTH_HEADER);
+            document.getElementById('login-modal').style.display = 'none';
+            refreshDashboard();
+        }
+
+        // Her fetch isteğine Authorization header ekle (CORS-safe)
+        const originalFetch = window.fetch;
+        window.fetch = function (resource, config = {}) {
+            if (!config.headers) config.headers = {};
+            if (ADMIN_AUTH_HEADER) {
+                config.headers['Authorization'] = ADMIN_AUTH_HEADER;
+            }
+            // credentials: 'include' KALDIRILDI - çünkü CORS hatası yapıyordu
+            return originalFetch(resource, config).then(async res => {
+                if (res.status === 401) {
+                    // Şifre yanlış - oturumu temizle ve tekrar sor
+                    ADMIN_AUTH_HEADER = null;
+                    sessionStorage.removeItem('admin_auth');
+                    document.getElementById('login-modal').style.display = 'flex';
+                    document.getElementById('login-error').style.display = 'block';
+                }
+                return res;
+            });
         };
 
         // Tab switching

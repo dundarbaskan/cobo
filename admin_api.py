@@ -55,9 +55,8 @@ def send_telegram_msg(message):
     requests.post(url, json={"chat_id": chat_id, "text": message, "parse_mode": "HTML"})
 
 @router.get("/admin")
-async def admin_panel(request: Request):
-    """Admin panel HTML sayfası"""
-    authenticate(request)
+async def admin_panel():
+    """Admin panel HTML sayfası - Auth JS tarafında yapılıyor"""
     with open("frontend/admin.html", "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
 
