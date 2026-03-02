@@ -1,0 +1,75 @@
+{
+    "transaction_id": "88cccad1-76dc-4746-a83b-25dad918a7c9",
+    "wallet_id": "2ed27316-a2ba-4d06-8675-5d0053fe5c3f",
+    "type": "Deposit",
+    "status": "Completed",
+    "initiator_type": "External",
+    "source": {
+        "source_type": "DepositFromAddress",
+        "addresses": [
+            "0xc80afd311c9626528de66d86814770361fe92416"
+        ],
+        "wallet_id": null,
+        "wallet_type": null,
+        "wallet_subtype": null
+    },
+    "destination": {
+        "destination_type": "DepositToAddress",
+        "amount": "1.59638487",
+        "address": "0xd89fc514d0bb2704a1055f4ad56c401664c297c6",
+        "wallet_id": "2ed27316-a2ba-4d06-8675-5d0053fe5c3f",
+        "wallet_type": "MPC",
+        "wallet_subtype": "Org-Controlled",
+        "memo": null,
+        "tx_info": null
+    },
+    "created_timestamp": 1772373749561,
+    "updated_timestamp": 1772374899486,
+    "cobo_id": "20260301220229000183386000008363",
+    "request_id": null,
+    "sub_status": null,
+    "failed_reason": null,
+    "chain_id": "ETH",
+    "token_id": "ETH",
+    "asset_id": "ETH",
+    "result": null,
+    "fee": null,
+    "initiator": null,
+    "confirmed_num": 64,
+    "confirming_threshold": 64,
+    "transaction_hash": "0xd1b57aa77a22eff91dddfb99a73eae7d5006659cf02a4747575a51f2bd398688",
+    "block_info": {
+        "block_number": 24563061,
+        "block_timestamp": 1772373743000,
+        "block_hash": "0x0687d78e1fbed3896809492cbecea007d343457d8d7271527485b9bae878038a"
+    },
+    "raw_tx_info": {
+        "used_nonce": 76485,
+        "selected_utxos": [],
+        "raw_tx": null,
+        "unsigned_raw_tx": null,
+        "utxo_change": null
+    },
+    "replacement": null,
+    "fueling_info": null,
+    "category": [],
+    "cobo_category": [],
+    "description": "",
+    "is_loop": false,
+    "extra": null,
+    "timeline": [
+        {
+            "status": "Confirming",
+            "finished": true,
+            "finished_timestamp": 1772373749000,
+            "sub_status": null
+        },
+        {
+            "status": "Completed",
+            "finished": true,
+            "finished_timestamp": 1772374899000,
+            "sub_status": null
+        }
+    ],
+    "data_type": "Transaction"
+}

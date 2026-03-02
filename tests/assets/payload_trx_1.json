@@ -1,0 +1,69 @@
+{
+    "transaction_id": "a1425937-71c9-4c5a-9d60-543aa5a657d0",
+    "wallet_id": "2ed27316-a2ba-4d06-8675-5d0053fe5c3f",
+    "type": "Deposit",
+    "status": "Completed",
+    "initiator_type": "External",
+    "source": {
+        "source_type": "DepositFromAddress",
+        "addresses": [
+            "TUJMek9erMZ3MKyM2NTm8iENEPgpqdZm6g"
+        ],
+        "wallet_id": null,
+        "wallet_type": null,
+        "wallet_subtype": null
+    },
+    "destination": {
+        "destination_type": "DepositToAddress",
+        "amount": "10630.1118",
+        "address": "TErzRdqZKvJBFkcPWuJQGh9PWkNfRSAyjk",
+        "wallet_id": "2ed27316-a2ba-4d06-8675-5d0053fe5c3f",
+        "wallet_type": "MPC",
+        "wallet_subtype": "Org-Controlled",
+        "memo": null,
+        "tx_info": null
+    },
+    "created_timestamp": 1772388250160,
+    "updated_timestamp": 1772388359535,
+    "cobo_id": "20260302020410000183386000001192",
+    "request_id": null,
+    "sub_status": null,
+    "failed_reason": null,
+    "chain_id": "TRON",
+    "token_id": "TRON",
+    "asset_id": "TRON",
+    "result": null,
+    "fee": null,
+    "initiator": null,
+    "confirmed_num": 20,
+    "confirming_threshold": 20,
+    "transaction_hash": "243a74e3e8a985320ffa8f2bf70657280fd56149cb5def3e2af8f0f5a41dc526",
+    "block_info": {
+        "block_number": 80574269,
+        "block_timestamp": 1772388240000,
+        "block_hash": "0000000004cd773d29da8541462f7f9d2662f9fd3852902890a6edcef9614bc6"
+    },
+    "raw_tx_info": null,
+    "replacement": null,
+    "fueling_info": null,
+    "category": [],
+    "cobo_category": [],
+    "description": "",
+    "is_loop": false,
+    "extra": null,
+    "timeline": [
+        {
+            "status": "Confirming",
+            "finished": true,
+            "finished_timestamp": 1772388250000,
+            "sub_status": null
+        },
+        {
+            "status": "Completed",
+            "finished": true,
+            "finished_timestamp": 1772388359000,
+            "sub_status": null
+        }
+    ],
+    "data_type": "Transaction"
+}
