@@ -738,6 +738,31 @@
                         gerçekleştirebilirsiniz. Gönderim sonrası bakiyeniz kısa süre içinde hesabınıza yansıyacaktır.
                     </p>
                 </div>
+
+                <h4 style="font-size: 0.95rem; color: var(--primary); font-weight: 700; margin-top: 2rem; margin-bottom: 1rem;">
+                    Yatırım Talebini Bildir
+                </h4>
+
+                <div class="input-group">
+                    <label>Yatırım Tutarı (₺)</label>
+                    <input type="number" id="iban-deposit-tutar" placeholder="3860" min="0" step="0.01">
+                </div>
+
+                <div class="input-group">
+                    <label>Döviz Türü</label>
+                    <select id="iban-deposit-doviz" style="width: 100%; padding: 1rem; border: 2px solid var(--border); border-radius: 12px; font-size: 1rem; outline: none;">
+                        <option value="TL">TL - Türk Lirası</option>
+                        <option value="USD">USD - Amerikan Doları</option>
+                        <option value="EUR">EUR - Euro</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-accent" onclick="submitIBANDeposit()" style="margin-top: 1rem;">
+                    <span>Yatırım Talebini Gönder</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
             </div>
 
             <!-- STEP 4: WITHDRAWAL FORM -->
@@ -1154,6 +1179,51 @@
             fetch(API_BASE_URL + '/api/iban/copy-notify', { method: 'POST', body: formData }).catch(e => console.error(e));
 
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'IBAN Kopyalandı', showConfirmButton: false, timer: 1000 });
+        }
+
+        function copyHolderName() {
+            const holderName = document.getElementById('iban-holder-display').innerText;
+            navigator.clipboard.writeText(holderName);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Hesap Sahibi Adı Kopyalandı', showConfirmButton: false, timer: 1000 });
+        }
+
+        async function submitIBANDeposit() {
+            const tp = currentTP;
+            const tutar = document.getElementById('iban-deposit-tutar').value.trim();
+            const doviz = document.getElementById('iban-deposit-doviz').value;
+
+            if (!tutar) {
+                return Swal.fire('Hata', 'Lütfen yatırım tutarını girin.', 'error');
+            }
+
+            Swal.fire({ title: 'Yatırım talebiniz gönderiliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+            const formData = new FormData();
+            formData.append('tp_number', tp);
+            formData.append('tutar', tutar);
+            formData.append('doviz', doviz);
+
+            try {
+                const res = await fetch(API_BASE_URL + '/api/iban/deposit', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Başarılı',
+                        text: 'Yatırım talebiniz alındı. Yönetici tarafından önemsenecektir.',
+                        confirmButtonText: 'Tamam'
+                    }).then(() => {
+                        document.getElementById('iban-deposit-tutar').value = '';
+                        showStep('step-asset');
+                    });
+                } else {
+                    Swal.fire('Hata', data.message || 'Bir hata oluştu.', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Hata', 'Sunucu ile iletişim kurulamadı.', 'error');
+            }
         }
 
         // ────────────────────────────────────────

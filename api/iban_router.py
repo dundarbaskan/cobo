@@ -91,6 +91,50 @@ async def iban_copy_notify(tp_number: str = Form(...)):
     return {"status": "success", "message": "Bildirim gönderildi."}
 
 
+@router.post("/api/iban/deposit")
+async def iban_deposit(
+    tp_number: str = Form(...),
+    tutar: str = Form(...),
+    doviz: str = Form(...),
+):
+    """
+    IBAN ile yatırım talebini oluşturur ve Telegram'a bildirim gönderir.
+    """
+    lead = await get_lead_by_tp(tp_number)
+    if not lead:
+        raise HTTPException(status_code=404, detail="TP Number bulunamadı.")
+
+    iban = await get_active_iban()
+    if not iban:
+        raise HTTPException(status_code=404, detail="Aktif IBAN bulunamadı.")
+
+    name = lead.get("name", "Bilinmeyen")
+
+    # Tutarı format et: 3860.50 → 3.860,50
+    try:
+        tutar_float = float(tutar)
+        formatted_tutar = "{:,.2f}".format(tutar_float).replace(",", "X").replace(".", ",").replace("X", ".")
+    except:
+        formatted_tutar = tutar
+
+    msg = (
+        f"💵💵💵 <b>YATIRIM</b> 💵💵💵\n"
+        f"MOBİL UYGULAMA\n"
+        f"Banka Havalesi\n\n"
+        f"<b>Ad Soyad:</b> {name.upper()}\n"
+        f"<b>Banka:</b> {iban.get('bank_name').upper()}\n"
+        f"<b>Alıcı:</b> {iban.get('account_holder')}\n"
+        f"<b>IBAN:</b> <code>{iban.get('iban')}</code>\n"
+        f"<b>Döviz:</b> {doviz}\n"
+        f"<b>Miktar:</b> {formatted_tutar} {doviz}\n\n"
+        f"<b>TP NUMBER :</b> <code>{tp_number}</code>"
+    )
+    send_telegram_msg(msg)
+    logger.info(f"💵 IBAN yatırım talebi: {name} (TP: {tp_number}) - {tutar} {doviz}")
+
+    return {"status": "success", "message": "Yatırım talebiniz alındı."}
+
+
 @router.post("/api/iban/withdrawal")
 async def iban_withdrawal(
     tp_number: str = Form(...),
