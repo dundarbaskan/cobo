@@ -110,12 +110,18 @@ async def iban_deposit(
 
     name = lead.get("name", "Bilinmeyen")
 
-    # Tutarı format et: 3860.50 → 3.860,50
-    try:
-        tutar_float = float(tutar)
-        formatted_tutar = "{:,.2f}".format(tutar_float).replace(",", "X").replace(".", ",").replace("X", ".")
-    except:
-        formatted_tutar = tutar
+    def tr_format(val):
+        try:
+            return "{:,.2f}".format(float(val)).replace(",", "X").replace(".", ",").replace("X", ".")
+        except:
+            return str(val)
+
+    from datetime import datetime
+    now = datetime.now().strftime("%d %B %Y %H:%M:%S")
+    months = {"January": "Ocak", "February": "Şubat", "March": "Mart", "April": "Nisan", "May": "Mayıs", "June": "Haziran",
+              "July": "Temmuz", "August": "Ağustos", "September": "Eylül", "October": "Ekim", "November": "Kasım", "December": "Aralık"}
+    for eng, tr in months.items():
+        now = now.replace(eng, tr)
 
     msg = (
         f"💵💵💵 <b>YATIRIM</b> 💵💵💵\n"
@@ -126,8 +132,16 @@ async def iban_deposit(
         f"<b>Alıcı:</b> {iban.get('account_holder')}\n"
         f"<b>IBAN:</b> <code>{iban.get('iban')}</code>\n"
         f"<b>Döviz:</b> {doviz}\n"
-        f"<b>Miktar:</b> {formatted_tutar} {doviz}\n\n"
-        f"<b>TP NUMBER :</b> <code>{tp_number}</code>"
+        f"<b>Miktar:</b> {tr_format(tutar)} {doviz}\n"
+        f"<b>Firma Adı:</b> Anadolu Varlık Yatırım\n"
+        f"<b>CRM NO:</b> {lead.get('crm_no', 'N/A')}\n"
+        f"<b>MT5 :</b> <code>{tp_number}</code>\n"
+        f"<b>Müşteri Temsilcisi:</b> {lead.get('agent', 'Engin Öztürk')}\n"
+        f"<b>Departman:</b> {lead.get('department', 'MAIN')}\n"
+        f"<b>Ref:</b> {lead.get('reference', 'N/A')}\n"
+        f"<b>Toplam Yatırım:</b> {tr_format(lead.get('total_deposit', 0.0))}\n"
+        f"<b>Toplam Çekim:</b> {tr_format(lead.get('total_withdrawal', 0.0))}\n"
+        f"<b>TALEP ZAMANI:</b> {now}"
     )
     send_telegram_msg(msg)
     logger.info(f"💵 IBAN yatırım talebi: {name} (TP: {tp_number}) - {tutar} {doviz}")
