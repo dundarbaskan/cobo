@@ -558,9 +558,9 @@
         <div class="card">
             <!-- TAB BAR (Kripto/IBAN/Çekim) -->
             <div id="tab-bar" class="tab-bar" style="display: none;">
-                <button class="tab-btn active" onclick="switchTab('crypto')">💎 Kripto Yatır</button>
-                <button class="tab-btn" onclick="switchTab('iban')">🏦 IBAN Yatır</button>
-                <button class="tab-btn" onclick="switchTab('withdraw')">💸 Çekim</button>
+                <button class="tab-btn active" onclick="switchTab('crypto', this)">💎 Kripto Yatır</button>
+                <button class="tab-btn" onclick="switchTab('iban', this)">🏦 IBAN Yatır</button>
+                <button class="tab-btn" onclick="switchTab('withdraw', this)">💸 Çekim</button>
             </div>
 
             <!-- STEP 1: LOGIN -->
@@ -1096,10 +1096,10 @@
         // ────────────────────────────────────────
         // TAB SWITCHING
         // ────────────────────────────────────────
-        function switchTab(tabName) {
+        function switchTab(tabName, el) {
             // Tab buttons'ı güncelle
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            if (el) el.classList.add('active');
 
             // Steps'ı göster/gizle
             if (tabName === 'crypto') {
