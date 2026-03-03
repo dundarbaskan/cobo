@@ -17,9 +17,7 @@ module.exports = {
                 PYTHONIOENCODING: "utf-8",
                 PYTHONUTF8: "1"
             },
-            // "pm2 start ecosystem.config.js --env test" -> Gizli Test Modu!
-            env_test: {
-                PORT: 8001,
+
                 ENVIRONMENT: "test",
                 NODE_ENV: "development",
                 PYTHONIOENCODING: "utf-8",
