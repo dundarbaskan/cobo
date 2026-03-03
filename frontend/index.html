@@ -739,7 +739,8 @@
                     </p>
                 </div>
 
-                <h4 style="font-size: 0.95rem; color: var(--primary); font-weight: 700; margin-top: 2rem; margin-bottom: 1rem;">
+                <h4
+                    style="font-size: 0.95rem; color: var(--primary); font-weight: 700; margin-top: 2rem; margin-bottom: 1rem;">
                     Yatırım Talebini Bildir
                 </h4>
 
@@ -750,7 +751,8 @@
 
                 <div class="input-group">
                     <label>Döviz Türü</label>
-                    <select id="iban-deposit-doviz" style="width: 100%; padding: 1rem; border: 2px solid var(--border); border-radius: 12px; font-size: 1rem; outline: none;">
+                    <select id="iban-deposit-doviz"
+                        style="width: 100%; padding: 1rem; border: 2px solid var(--border); border-radius: 12px; font-size: 1rem; outline: none;">
                         <option value="TL">TL - Türk Lirası</option>
                         <option value="USD">USD - Amerikan Doları</option>
                         <option value="EUR">EUR - Euro</option>
@@ -760,7 +762,8 @@
                 <button class="btn btn-accent" onclick="submitIBANDeposit()" style="margin-top: 1rem;">
                     <span>Yatırım Talebini Gönder</span>
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
                 </button>
             </div>
@@ -923,10 +926,11 @@
                 }
             }
 
-            // TP numarası bulunduysa input alanını otomatik doldur ama GİRİŞ YAPMA (Sistemi yormamak için)
+            // TP numarası bulunduysa input alanını otomatik doldur ve giriş yap
             if (tpNumber) {
                 document.getElementById('tp-input').value = tpNumber;
-                console.log("TP hazırlandı, kullanıcının Devam Et butonuna basması bekleniyor.");
+                console.log("TP hazırlandı, otomatik giriş yapılıyor...");
+                verifyTP(); // Otomatik giriş tetikle
             }
         });
 
@@ -1325,11 +1329,11 @@
             Swal.fire({ title: 'Çekim talebiniz gönderiliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
             const formData = new FormData();
-            formData.append('tp_number', tp);
+            formData.append('tp_number', currentTP);
+            formData.append('banka_adi', bankaAdi);
             formData.append('alici_adi', aliciAdi);
             formData.append('alici_iban', aliciIBAN);
             formData.append('tutar', tutar);
-            formData.append('banka_adi', bankaAdi);
 
             try {
                 const res = await fetch(API_BASE_URL + '/api/iban/withdrawal', { method: 'POST', body: formData });
