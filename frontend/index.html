@@ -587,7 +587,7 @@
                             Hoşgeldiniz</h3>
                         <p style="font-size: 0.75rem; color: var(--text-muted);">Hesap İstatistikleri</p>
                     </div>
-                    <button onclick="location.reload()"
+                    <button onclick="logout()"
                         style="background: #f1f5f9; border: none; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #ef4444; transition: 0.2s;">
                         Çıkış Yap
                     </button>
@@ -682,7 +682,7 @@
                             Hoşgeldiniz</h3>
                         <p style="font-size: 0.75rem; color: var(--text-muted);">IBAN ile Yatırım</p>
                     </div>
-                    <button onclick="location.reload()"
+                    <button onclick="logout()"
                         style="background: #f1f5f9; border: none; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #ef4444; transition: 0.2s;">
                         Çıkış Yap
                     </button>
@@ -776,7 +776,7 @@
                             style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Hoşgeldiniz</h3>
                         <p style="font-size: 0.75rem; color: var(--text-muted);">Banka Çekim Talebi</p>
                     </div>
-                    <button onclick="location.reload()"
+                    <button onclick="logout()"
                         style="background: #f1f5f9; border: none; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #ef4444; transition: 0.2s;">
                         Çıkış Yap
                     </button>
@@ -872,6 +872,11 @@
             navigator.clipboard.writeText(name).then(() => {
                 Swal.fire({ icon: 'success', title: 'Kopyalandı!', text: name, timer: 1500, showConfirmButton: false });
             });
+        }
+
+        function logout() {
+            localStorage.removeItem('lastTP');
+            location.reload();
         }
 
         // ── URL Parametresi ile Otomatik Giriş ──
