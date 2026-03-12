@@ -28,6 +28,7 @@ from servisler.db_service import (
 )
 from servisler.qr_service import generate_qr_base64
 from config.settings import COBO_API_KEY, COBO_API_SECRET, COBO_WALLET_ID, logger
+from servisler.mt5_sync_util import force_sync_single_user
 
 router = APIRouter(prefix="/api", tags=["Wallet"])
 
@@ -36,6 +37,13 @@ router = APIRouter(prefix="/api", tags=["Wallet"])
 async def verify_tp(tp_number: str = Form(...)):
     """TP numarasını doğrular ve müşteri bilgilerini döndürür"""
     lead = await get_lead_by_tp(tp_number)
+    
+    if not lead:
+        # Fallback: manuel senkronizasyon tetikle ve tekrar kontrol et
+        sync_success = await force_sync_single_user(tp_number)
+        if sync_success:
+            lead = await get_lead_by_tp(tp_number)
+            
     if not lead:
         return JSONResponse(
             status_code=404,
@@ -70,6 +78,13 @@ async def create_wallet(
 ):
     """Cobo API üzerinden yeni cüzdan oluşturur"""
     lead = await get_lead_by_tp(tp_number)
+    
+    if not lead:
+        # Fallback: manuel senkronizasyon tetikle ve tekrar kontrol et
+        sync_success = await force_sync_single_user(tp_number)
+        if sync_success:
+            lead = await get_lead_by_tp(tp_number)
+            
     if not lead:
         raise HTTPException(status_code=404, detail="Geçersiz TP Number")
 
