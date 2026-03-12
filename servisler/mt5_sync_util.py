@@ -1,8 +1,8 @@
 import os
 import time
 import logging
-from mt5service import MT5UserManager
-from db_service import save_lead, get_lead_by_tp
+from servisler.mt5service import MT5UserManager
+from servisler.db_service import save_lead, get_lead_by_tp
 
 logger = logging.getLogger(__name__)
 
