@@ -25,6 +25,7 @@ from config.settings import COBO_WALLET_ID
 # V2.0 - Onay/ret işlemleri için gerekli import'lar
 from workers.pending_store import pending_transactions
 from workers.webhook_processor import _process_mt5_balance
+from core.comision.calculate_comision import COMISION_RATE
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +113,7 @@ async def telegram_callback(
             f"<b>AĞ :</b> {symbol.upper()} - {chain_id.upper()}\n"
             f"<b>TUTAR :</b> {formatted_raw_amount} {symbol.upper()}\n"
             f"<b>USD DEĞERİ :</b> ${gross_amount:,.2f}\n"
-            f"<b>KESİLEN KOMİSYON TUTARI ( %5) :</b> ${comision_amount:,.2f}\n"
+            f"<b>KESİLEN KOMİSYON TUTARI ( %{COMISION_RATE}) :</b> ${comision_amount:,.2f}\n"
             f"<b>HESAPCI :</b> CEP PORTFOY / {acc_comment}\n"
             f"<b>İŞLEM NO :</b> TP-{tp_number}\n"
             f"<b>AÇIKLAMA :</b> {city_code} - "

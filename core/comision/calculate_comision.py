@@ -3,7 +3,7 @@ Komisyon Hesaplama Modülü
 =========================
 Kripto yatırım işlemlerinde uygulanacak komisyon tutarını hesaplar.
 
-V2.0 - Komisyon Use Case. Oran statik %5, dışarıdan parametre alınmaz.
+V2.0 - Komisyon Use Case. Oran statik , dışarıdan parametre alınmaz.
 """
 
 # V2.0 - Statik komisyon oranı. .env veya dışarıdan alınmaz, buradan yönetilir.

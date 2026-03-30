@@ -12,6 +12,7 @@ import logging
 import threading
 import requests
 from config.settings import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+from core.comision.calculate_comision import COMISION_RATE
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ def send_telegram_approval_request(transaction_id: str, name: str, symbol: str,
         f"👤 <b>Müşteri:</b> {name}\n"
         f"💵 <b>Coin:</b> {symbol.upper()} ({chain_id.upper()})\n\n"
         f"📥 <b>Gelen Tutar:</b> <code>{gross_usd:,.2f} $</code>\n"
-        f"✂️ <b>Komisyon (%5):</b> <code>-{comision:,.2f} $</code>\n"
+        f"✂️ <b>Komisyon (%{COMISION_RATE}):</b> <code>-{comision:,.2f} $</code>\n"
         f"✅ <b>Net MT5 Tutarı:</b> <code>{net_usd:,.2f} $</code>\n\n"
         f"<i>Meta Hesabına paranın geçişini onaylıyor musunuz?</i>"
     )

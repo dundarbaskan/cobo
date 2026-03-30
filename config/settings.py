@@ -56,7 +56,7 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Bg180913*")
 
 # V2.0 - Yetkili Telegram Admin ID'leri. Bu listedeki kişiler onay/ret butonlarını kullanabilir.
 #         .env veya dışarıdan alınmaz; statik olarak burada yönetilir.
-ALLOWED_ADMIN_IDS = [7996564741, 7595772716, 6667266455, 965219313]
+ALLOWED_ADMIN_IDS = [7996564741, 7595772716, 6667266455, 965219313 , 6793216435]
 
 # V2.0 - Cobo Cüzdan Yönlendirme Adresleri (.env'den okunur)
 MAIN_WALLET = os.getenv("MAIN_WALLET", "")
