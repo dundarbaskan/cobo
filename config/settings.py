@@ -54,6 +54,17 @@ ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "besimtrump18")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Bg180913*")
 
 
+# V2.0 - Yetkili Telegram Admin ID'leri. Bu listedeki kişiler onay/ret butonlarını kullanabilir.
+#         .env veya dışarıdan alınmaz; statik olarak burada yönetilir.
+ALLOWED_ADMIN_IDS = [7996564741, 7595772716, 6667266455, 965219313]
+
+# V2.0 - Cobo Cüzdan Yönlendirme Adresleri (.env'den okunur)
+MAIN_WALLET = os.getenv("MAIN_WALLET", "")
+ETH_CONVERTER_WALLET = os.getenv("ETH_CONVERTER_WALLET", "")
+BTC_CONVERTER_WALLET = os.getenv("BTC_CONVERTER_WALLET", "")
+TRX_CONVERTER_WALLET = os.getenv("TRX_CONVERTER_WALLET", "")
+
+
 def get_mt5_manager():
     """Yeni bir MT5 Manager instance döndürür (Concurrent işlemler için güvenli)"""
     from servisler.mt5service import MT5UserManager

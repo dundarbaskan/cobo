@@ -36,11 +36,16 @@ from servisler.db_service import (
     update_financial_stats,
     get_all_our_addresses
 )
-from servisler.telegram_service import send_telegram_msg
+from servisler.telegram_service import send_telegram_msg, send_telegram_approval_request
 from config.settings import get_mt5_manager
 from config.constants import ALLOWED_TOKENS, BLOCKED_TYPES, get_display_chain_name
 from core.currency.converter.converter import coin_parser
 from core.filter.base_volume_filter import BaseVolumeFilter
+
+# V2.0 - Komisyon hesaplama, onay bekleyen işlem deposu ve cüzdan yönlendirme importları
+from core.comision.calculate_comision import calculate_comision
+from core.routing.coin_router import get_target_wallet
+from workers.pending_store import pending_transactions
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +191,7 @@ async def _process_successful_transaction(
     status: str
 ):
     """
-    Başarılı işlemleri işler: Müşteri bulma, kur çevirme, MT5 aktarım
+    Başarılı işlemleri işler: Müşteri bulma, kur çevirme, MT5 aktarım onayı
     """
     # Müşteriyi bul
     lead = await get_lead_by_address(address)
@@ -232,7 +237,7 @@ async def _process_successful_transaction(
     # MT5 metadata çek
     city_code, acc_comment = await _fetch_mt5_metadata(tp_number)
 
-    # Telegram bildirimi gönder
+    # Telegram bildirimi gönder (mevcut - ilk bildirim mesajı)
     msg = _build_deposit_telegram_message(
         name, symbol, chain_id, formatted_raw_amount,
         formatted_amount, tp_number, city_code, acc_comment,
@@ -240,8 +245,60 @@ async def _process_successful_transaction(
     )
     send_telegram_msg(msg)
 
-    # MT5'e bakiye ekle
-    await _process_mt5_balance(tp_number, name, amount, base_comment, formatted_amount)
+    # V2.0 - Komisyon hesapla
+    comision_data = calculate_comision(amount)
+    net_amount = comision_data["net"]
+    comision_amount = comision_data["comision"]
+    formatted_net = "{:,.2f}".format(net_amount).replace(",", "X").replace(".", ",").replace("X", ".")
+
+    # V2.0 - Onay bekleyen işlemi pending_store'a kaydet
+    pending_transactions[transaction_id] = {
+        "tp_number": tp_number,
+        "name": name,
+        "gross_amount": amount,
+        "comision_amount": comision_amount,
+        "net_amount": net_amount,
+        "formatted_net": formatted_net,
+        "formatted_raw_amount": formatted_raw_amount,
+        "symbol": symbol,
+        "chain_id": chain_id,
+        "city_code": city_code,
+        "acc_comment": acc_comment,
+        "base_comment": base_comment,
+        "tot_dep": tot_dep,
+        "tot_with": tot_with,
+    }
+
+    # V2.0 - MT5 aktarımı için Telegram onay mesajı gönder (ONAYLA / REDDET butonları)
+    send_telegram_approval_request(
+        transaction_id=transaction_id,
+        name=name,
+        symbol=symbol,
+        chain_id=chain_id,
+        gross_usd=amount,
+        comision=comision_amount,
+        net_usd=net_amount
+    )
+
+    # V2.0 - Coin routing: Gelen coin türüne göre hedef cüzdanı belirle ve Telegram'a bildir
+    wallet_address, wallet_label, is_main = get_target_wallet(symbol)
+    if wallet_address:
+        if is_main:
+            routing_msg = (
+                f"🏦 <b>ANA CÜZDANA PARA GÖNDERİLDİ</b>\n"
+                f"💵 Coin: {symbol.upper()} | Tutar: {formatted_raw_amount}\n"
+                f"📍 Hedef: <code>{wallet_address}</code>\n"
+                f"🏷️ Etiket: {wallet_label}"
+            )
+        else:
+            routing_msg = (
+                f"🔄 <b>CONVERT CÜZDANINA PARA GÖNDERİLDİ</b>\n"
+                f"💵 Coin: {symbol.upper()} | Tutar: {formatted_raw_amount}\n"
+                f"📍 Hedef: <code>{wallet_address}</code>\n"
+                f"🏷️ Etiket: {wallet_label}"
+            )
+        send_telegram_msg(routing_msg)
+        logger.info(f"🔀 Routing: {symbol} → {wallet_label} ({wallet_address})")
 
 
 async def _fetch_mt5_metadata(tp_number: str) -> tuple:
