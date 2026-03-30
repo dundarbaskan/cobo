@@ -71,18 +71,17 @@ async def mt5_approval_callback(update: Update, context: ContextTypes.DEFAULT_TY
     Telegram inline buton callback'lerini işler.
     'approve:<transaction_id>' veya 'reject:<transaction_id>' formatındaki
     callback_data'yı parse edip yerel API endpoint'ine iletir.
-
-    Güvenlik: Yalnızca ALLOWED_ADMIN_IDS listesindeki kullanıcılar işlem yapabilir.
-    Yetkisiz tıklamalar sessizce görmezden gelinir.
     """
     query = update.callback_query
     user_id = query.from_user.id
 
     # V2.0 - Admin yetki kontrolü. Yetkisiz kullanıcılar sessizce reddedilir.
     if user_id not in ALLOWED_ADMIN_IDS:
+        await query.answer("Yetkiniz yok!", show_alert=True)
         return
 
-    await query.answer()  # Telegram'a "buton alındı" sinyali
+    # UX 1: Ekranda yukarıdan inen loading pop-up'ı / toast mesajı gönder
+    await query.answer("⏳ İşleminiz yapılıyor, lütfen bekleyin...")
 
     callback_data = query.data  # "approve:<tx_id>" veya "reject:<tx_id>"
     try:
@@ -91,16 +90,41 @@ async def mt5_approval_callback(update: Update, context: ContextTypes.DEFAULT_TY
         logger.error(f"❌ Geçersiz callback_data formatı: {callback_data}")
         return
 
+    # UX 2: Çifte tıklamayı önlemek ve loading hissi vermek için butonları anında uçur
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception as e:
+        logger.warning(f"Buton kaldırılamadı: {e}")
+
+    # API'ye isteği at
     try:
         response = requests.post(
             f"http://localhost:{PORT}/api/telegram_callback",
             data={"action": action, "transaction_id": transaction_id},
             timeout=30
         )
-        if not response.ok:
+        
+        # UX 3: İşlem başarıyla bitince ilgili mesajın altına sonucu HTML olarak iliştir
+        if response.ok:
+            result_flag = "✅ <b>MT5 İŞLEMİ ONAYLANDI</b>" if action == "approve" else "❌ <b>İŞLEM REDDEDİLDİ</b>"
+            try:
+                # python-telegram-bot'un orijinal HTML formatlı metnini al
+                original_html = query.message.text_html
+                new_text = f"{original_html}\n\n{result_flag}"
+                await query.edit_message_text(text=new_text, parse_mode="HTML")
+            except Exception as loop_e:
+                logger.warning(f"Metin düzenlenemedi: {loop_e}")
+        else:
             logger.error(f"❌ Callback endpoint hatası: {response.status_code} - {response.text}")
+            try:
+                original_html = query.message.text_html
+                await query.edit_message_text(text=f"{original_html}\n\n⚠️ <b>SİSTEM HATASI OLUŞTU!</b>", parse_mode="HTML")
+            except:
+                pass
+
     except Exception as e:
         logger.error(f"❌ Callback isteği başarısız: {e}")
+
 
 
 def run_telegram_bot():
