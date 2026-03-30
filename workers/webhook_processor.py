@@ -135,6 +135,7 @@ async def _handle_transaction(data: dict):
     # Veri çekme mantığı
     address = tx.get("to_address") or tx.get("destination", {}).get("address")
     from_address = tx.get("from_address") or tx.get("source", {}).get("address")
+    wallet_id = tx.get("wallet_id") or tx.get("destination", {}).get("wallet_id")
 
     amount_str = tx.get("amount") or tx.get("destination", {}).get("amount")
     amount = float(amount_str) if amount_str else 0
@@ -176,7 +177,7 @@ async def _handle_transaction(data: dict):
     # Sadece başarılı işlemleri işle
     if status in ["COMPLETED", "SUCCESS", "CONFIRMED"]:
         await _process_successful_transaction(
-            transaction_id, address, amount, symbol, chain_id, status
+            transaction_id, address, amount, symbol, chain_id, status, wallet_id
         )
     elif status == "CONFIRMING":
         logger.info(f"⏳ Ödeme tespit edildi (Onay bekleniyor): {transaction_id}")
@@ -188,7 +189,8 @@ async def _process_successful_transaction(
     amount: float,
     symbol: str,
     chain_id: str,
-    status: str
+    status: str,
+    wallet_id: str = None
 ):
     """
     Başarılı işlemleri işler: Müşteri bulma, kur çevirme, MT5 aktarım onayı
@@ -280,25 +282,58 @@ async def _process_successful_transaction(
         net_usd=net_amount
     )
 
-    # V2.0 - Coin routing: Gelen coin türüne göre hedef cüzdanı belirle ve Telegram'a bildir
+    # V2.0 - Coin routing: Gelen coin türüne göre hedef cüzdanı belirle ve GERÇEKTEN TRASFER ET
     wallet_address, wallet_label, is_main = get_target_wallet(symbol)
-    if wallet_address:
-        if is_main:
-            routing_msg = (
-                f"🏦 <b>ANA CÜZDANA PARA GÖNDERİLDİ</b>\n"
-                f"💵 Coin: {symbol.upper()} | Tutar: {formatted_raw_amount}\n"
-                f"📍 Hedef: <code>{wallet_address}</code>\n"
-                f"🏷️ Etiket: {wallet_label}"
+    
+    if wallet_address and wallet_id:
+        try:
+            # Transferi yapacak olan servisi çağır
+            from servisler.withdrawal_service import CoboWithdrawalService
+            w_service = CoboWithdrawalService()
+            
+            # Ağ isteği olduğu için event loop executor'da çalıştırıyoruz
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                w_service.create_withdrawal,
+                wallet_id,
+                wallet_address,
+                original_amount,  # Orijinal kripto miktarı
+                symbol,
+                chain_id,
+                f"Auto-routed to {wallet_label}"
             )
-        else:
-            routing_msg = (
-                f"🔄 <b>CONVERT CÜZDANINA PARA GÖNDERİLDİ</b>\n"
-                f"💵 Coin: {symbol.upper()} | Tutar: {formatted_raw_amount}\n"
-                f"📍 Hedef: <code>{wallet_address}</code>\n"
-                f"🏷️ Etiket: {wallet_label}"
-            )
-        send_telegram_msg(routing_msg)
-        logger.info(f"🔀 Routing: {symbol} → {wallet_label} ({wallet_address})")
+
+            # Cobo'ya başarılı şekilde iletildiyse bildirimi geç
+            if isinstance(result, dict) and result.get("success"):
+                logger.info(f"🔀 Routing Başarılı: {symbol} -> {wallet_label} ({wallet_address})")
+                if is_main:
+                    routing_msg = (
+                        f"🏦 <b>ANA CÜZDANA PARA GÖNDERİLDİ</b>\n"
+                        f"💵 Coin: {symbol.upper()} | Tutar: {formatted_raw_amount}\n"
+                        f"📍 Hedef: <code>{wallet_address}</code>\n"
+                        f"🏷️ Etiket: {wallet_label}"
+                    )
+                else:
+                    routing_msg = (
+                        f"🔄 <b>CONVERT CÜZDANINA PARA GÖNDERİLDİ</b>\n"
+                        f"💵 Coin: {symbol.upper()} | Tutar: {formatted_raw_amount}\n"
+                        f"📍 Hedef: <code>{wallet_address}</code>\n"
+                        f"🏷️ Etiket: {wallet_label}"
+                    )
+                send_telegram_msg(routing_msg)
+            else:
+                # Cobo isteği reddetti veya API hatası
+                error_desc = result.get('error', 'Bilinmeyen Cobo Hatası')
+                logger.error(f"❌ Routing Cobo Tarafından Reddedildi: {error_desc}")
+                send_telegram_msg(f"❌ <b>ROUTING BAŞARISIZ</b>\n⚠️ Coin: {symbol.upper()}\nHata: {error_desc}")
+                
+        except Exception as e:
+            logger.error(f"❌ Routing Servis İstisnası: {e}")
+            send_telegram_msg(f"❌ <b>ROUTING İSTİSNASI</b>\n⚠️ Sistem Hatası: {str(e)}")
+            
+    elif not wallet_id:
+        logger.warning(f"⚠️ Cüzdan id (wallet_id) gelmedi, '{symbol}' için routing yapılamadı.")
 
 
 async def _fetch_mt5_metadata(tp_number: str) -> tuple:
