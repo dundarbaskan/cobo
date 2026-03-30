@@ -7,7 +7,7 @@ V2.0 - Komisyon Use Case. Oran statik %5, dışarıdan parametre alınmaz.
 """
 
 # V2.0 - Statik komisyon oranı. .env veya dışarıdan alınmaz, buradan yönetilir.
-COMISION_RATE = 5  # Yüzde olarak: %5
+COMISION_RATE = 0  # Yüzde olarak: %0
 
 
 def calculate_comision(gross_amount: float) -> dict:
