@@ -4,6 +4,7 @@ Para çekme işlemlerini yöneten servis
 """
 import os
 import uuid
+import certifi
 from dotenv import load_dotenv
 import cobo_waas2
 from cobo_waas2 import ApiClient, Configuration
@@ -19,6 +20,8 @@ class CoboWithdrawalService:
             api_private_key=self.api_secret,
             host="https://api.cobo.com/v2"
         )
+        # V2.0 - Windows/Local sunuculardaki SSL (Max retries exceeded) problemini çözmek için
+        self.configuration.ssl_ca_cert = certifi.where()
     
     def create_withdrawal(self, wallet_id, to_address, amount, token_id="USDT", chain_id="TRON", note=""):
         """
