@@ -132,6 +132,7 @@ async def get_widget_url(tp_number: str):
         "defaultFiat": "TRY",
         "partnerContext": str(tp_number),
         "wallets": f"usdt_tron:{address}",
+        "lang": "tr",
         "themeName": "light",
         "containerColor": "f5faf6",
         "primaryColor": "3e8e41",
