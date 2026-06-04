@@ -1,0 +1,115 @@
+{
+	"nodes": [
+		{
+			"id": "node_giris",
+			"type": "file",
+			"file": "Giris.md",
+			"x": 0,
+			"y": 0,
+			"width": 400,
+			"height": 250,
+			"color": "1"
+		},
+		{
+			"id": "node_cuzdan",
+			"type": "file",
+			"file": "Cuzdan_Nasil_Olusturulur.md",
+			"x": 550,
+			"y": -250,
+			"width": 400,
+			"height": 250,
+			"color": "2"
+		},
+		{
+			"id": "node_webhook",
+			"type": "file",
+			"file": "Webhook_Bildirimleri_Nasil_Calisir.md",
+			"x": 550,
+			"y": 150,
+			"width": 400,
+			"height": 250,
+			"color": "3"
+		},
+		{
+			"id": "node_mt5",
+			"type": "file",
+			"file": "MT5_Bakiye_Aktarimi_Nasil_Onaylanir.md",
+			"x": 1100,
+			"y": -50,
+			"width": 400,
+			"height": 250,
+			"color": "4"
+		},
+		{
+			"id": "node_routing",
+			"type": "file",
+			"file": "Coin_Routing_Nasil_Calisir.md",
+			"x": 1100,
+			"y": 250,
+			"width": 400,
+			"height": 250,
+			"color": "5"
+		},
+		{
+			"id": "node_fiat",
+			"type": "file",
+			"file": "Kullanici_Nasil_Yatirim_Yapacak.md",
+			"x": 0,
+			"y": -350,
+			"width": 400,
+			"height": 250,
+			"color": "6"
+		}
+	],
+	"edges": [
+		{
+			"id": "edge_fiat_to_giris",
+			"fromNode": "node_fiat",
+			"fromSide": "bottom",
+			"toNode": "node_giris",
+			"toSide": "top"
+		},
+		{
+			"id": "edge_giris_to_cuzdan",
+			"fromNode": "node_giris",
+			"fromSide": "right",
+			"toNode": "node_cuzdan",
+			"toSide": "left"
+		},
+		{
+			"id": "edge_giris_to_webhook",
+			"fromNode": "node_giris",
+			"fromSide": "right",
+			"toNode": "node_webhook",
+			"toSide": "left"
+		},
+		{
+			"id": "edge_cuzdan_to_webhook",
+			"fromNode": "node_cuzdan",
+			"fromSide": "bottom",
+			"toNode": "node_webhook",
+			"toSide": "top"
+		},
+		{
+			"id": "edge_webhook_to_mt5",
+			"fromNode": "node_webhook",
+			"fromSide": "right",
+			"toNode": "node_mt5",
+			"toSide": "left"
+		},
+		{
+			"id": "edge_webhook_to_routing",
+			"fromNode": "node_webhook",
+			"fromSide": "right",
+			"toNode": "node_routing",
+			"toSide": "left"
+		},
+		{
+			"id": "edge_mt5_to_fiat",
+			"fromNode": "node_mt5",
+			"fromSide": "top",
+			"toNode": "node_fiat",
+			"toSide": "right"
+		}
+	]
+}
