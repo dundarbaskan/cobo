@@ -16,6 +16,8 @@ Projenin tüm detaylarını soru-cevap mantığıyla açıklayan rehber bağlant
    * [[Coin_Routing_Nasil_Calisir]]: Gelen kripto paralar otomatik olarak ana kasaya veya convert cüzdanlarına nasıl süpürülür (sweep)?
 5. **IBAN & Çekim Süreçleri:**
    * [[Kullanici_Nasil_Yatirim_Yapacak]]: Banka havalesiyle yatırım, çekim talepleri ve kopyalama bildirimleri nasıl işler?
+6. **Onramper Entegrasyonu:**
+   * [[Onramper_Entegrasyonu_Nasil_Calisir]]: Kredi kartı ile kripto para satın alma, URL imzalama (signing) güvenliği ve webhook callback akışları nasıl çalışır?
 
 ---
 
@@ -23,7 +25,7 @@ Projenin tüm detaylarını soru-cevap mantığıyla açıklayan rehber bağlant
 
 Obsidian graph view'da süreçleri ve dosyaları kolayca ayırt edebilmek amacıyla aşağıdaki etiketler (`tags`) kullanılmıştır. Grafiğinizde grupları bu etiketlere göre renklendirebilirsiniz:
 
-* 🔴 **`#group/fiat` (Kırmızı):** IBAN / Havale Yatırım & Çekim işlemleriyle ilgili süreçler.
+* 🔴 **`#group/fiat` (Kırmızı):** IBAN / Havale Yatırım & Çekim işlemleri ve Kredi Kartı (Onramper) ödeme süreçleri.
 * 🟠 **`#group/waas` (Turuncu):** Cobo WaaS API entegrasyonu, cüzdan adresi oluşturma ve webhook bildirimleri.
 * 🟢 **`#group/mt5` (Yeşil):** MT5 bakiye işlemleri, dealer balance komutları ve veri senkronizasyonu.
 * 🔵 **`#group/telegram` (Mavi/Cyan):** Telegram botu, komut API'si ve yetkili admin onay/ret butonları.
@@ -37,4 +39,4 @@ Süreçlerin görsel akış şemasını ve cüzdanlar arası ilişkileri görmek
 📂 **[[Proje_Genel_Haritasi.canvas]]** dosyasını Obsidian üzerinde açabilirsiniz.
 
 ---
-#guide #cobo #mt5 #integration #documentation
+#guide #cobo #mt5 #integration #documentation #onramper

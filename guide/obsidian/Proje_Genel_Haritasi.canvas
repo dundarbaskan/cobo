@@ -59,6 +59,16 @@
 			"width": 400,
 			"height": 250,
 			"color": "6"
+		},
+		{
+			"id": "node_onramper",
+			"type": "file",
+			"file": "Onramper_Entegrasyonu_Nasil_Calisir.md",
+			"x": -550,
+			"y": 0,
+			"width": 400,
+			"height": 250,
+			"color": "6"
 		}
 	],
 	"edges": [
@@ -110,6 +120,27 @@
 			"fromSide": "top",
 			"toNode": "node_fiat",
 			"toSide": "right"
+		},
+		{
+			"id": "edge_giris_to_onramper",
+			"fromNode": "node_giris",
+			"fromSide": "left",
+			"toNode": "node_onramper",
+			"toSide": "right"
+		},
+		{
+			"id": "edge_onramper_to_cuzdan",
+			"fromNode": "node_onramper",
+			"fromSide": "top",
+			"toNode": "node_cuzdan",
+			"toSide": "left"
+		},
+		{
+			"id": "edge_onramper_to_webhook",
+			"fromNode": "node_onramper",
+			"fromSide": "bottom",
+			"toNode": "node_webhook",
+			"toSide": "left"
 		}
 	]
 }

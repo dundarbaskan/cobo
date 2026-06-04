@@ -18,6 +18,7 @@ from api.webhook_router import router as webhook_router
 from api.system_router import router as system_router
 from api.telegram_router import router as telegram_router
 from api.iban_router import router as iban_router
+from api.onramper_router import router as onramper_router
 from admin_api import router as admin_router
 
 # Telegram Bot
@@ -37,7 +38,7 @@ async def verify_and_rate_limit(request: Request, call_next):
     path = request.url.path
 
     # İstisnalar: Statik dosyalar, webhook ve localhost istekleri
-    if path.startswith("/static") or path.startswith("/logolar") or path == "/cobo/callback" or client_ip in ["127.0.0.1", "localhost", "::1"]:
+    if path.startswith("/static") or path.startswith("/logolar") or path == "/cobo/callback" or path == "/api/onramper/callback" or client_ip in ["127.0.0.1", "localhost", "::1"]:
         return await call_next(request)
 
     # Sadece TEST modunda kısıtlamaları uygula
@@ -90,6 +91,7 @@ app.include_router(system_router)
 app.include_router(telegram_router)
 app.include_router(iban_router)
 app.include_router(admin_router)
+app.include_router(onramper_router)
 
 if __name__ == "__main__":
     # Botu sadece canlı modda başlat

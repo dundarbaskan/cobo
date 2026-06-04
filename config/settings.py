@@ -65,6 +65,12 @@ BTC_CONVERTER_WALLET = os.getenv("BTC_CONVERTER_WALLET", "")
 TRX_CONVERTER_WALLET = os.getenv("TRX_CONVERTER_WALLET", "")
 
 
+# V2.0 - Onramper Ayarları (.env'den okunur)
+ONRAMPER_API_KEY = os.getenv("ONRAMPER_API_KEY")
+ONRAMPER_SECRET_KEY = os.getenv("ONRAMPER_SECRET_KEY")
+ONRAMPER_WIDGET_URL = os.getenv("ONRAMPER_WIDGET_URL")
+
+
 def get_mt5_manager():
     """Yeni bir MT5 Manager instance döndürür (Concurrent işlemler için güvenli)"""
     from servisler.mt5service import MT5UserManager
