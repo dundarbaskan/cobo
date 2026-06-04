@@ -110,35 +110,48 @@ async def get_widget_url(tp_number: str):
     # 2. USDT-TRON adresini al veya oluştur
     address = await _get_or_create_usdt_tron_wallet(tp_number)
 
-    # 3. Onramper parametrelerini hazırla
-    params = {
-        "apiKey": ONRAMPER_API_KEY,
-        "defaultCrypto": "USDT",
-        "defaultFiat": "TRY",
-        "defaultNetwork": "tron",
-        "partnerContext": str(tp_number),
-        "wallets": f"USDT_TRON:{address}"
-    }
+    # 3. Onramper imzalama metnini hazırla (Sadece lowercase wallets parametresi imzalanır!)
+    sign_content = f"wallets=usdt_tron:{address}"
 
-    # 4. Parametreleri alfabetik sıralayıp querystring oluştur
-    sorted_params = sorted(params.items())
-    querystring = urllib.parse.urlencode(sorted_params)
-
-    # 5. Gizli anahtar ile HMAC-SHA256 imzası oluştur
+    # 4. Gizli anahtar ile HMAC-SHA256 imzası oluştur
     if not ONRAMPER_SECRET_KEY:
         logger.error("❌ Onramper: ONRAMPER_SECRET_KEY konfigürasyonu eksik!")
         raise HTTPException(status_code=500, detail="Onramper imzalama anahtarı tanımlanmamış.")
 
     signature = hmac.new(
         ONRAMPER_SECRET_KEY.encode("utf-8"),
-        querystring.encode("utf-8"),
+        sign_content.encode("utf-8"),
         hashlib.sha256
     ).hexdigest()
 
-    # 6. Nihai URL'yi oluştur
+    # 5. Tüm query parametrelerini hazırla (İmzasızlar + wallets + tema özellikleri)
+    params = {
+        "apiKey": ONRAMPER_API_KEY,
+        "defaultCrypto": "usdt",
+        "defaultNetwork": "tron",
+        "defaultFiat": "TRY",
+        "partnerContext": str(tp_number),
+        "wallets": f"usdt_tron:{address}",
+        "themeName": "light",
+        "containerColor": "f5faf6",
+        "primaryColor": "3e8e41",
+        "secondaryColor": "f3f3f3",
+        "cardColor": "ffffff",
+        "primaryTextColor": "647365",
+        "secondaryTextColor": "3e8e41",
+        "primaryBtnTextColor": "ffffff",
+        "borderRadius": "0.5",
+        "wgBorderRadius": "1"
+    }
+
+    # 6. Parametreleri alfabetik sıralayıp querystring oluştur
+    sorted_params = sorted(params.items())
+    querystring = urllib.parse.urlencode(sorted_params)
+
+    # 7. Nihai URL'yi oluştur
     final_url = f"{ONRAMPER_WIDGET_URL}?{querystring}&signature={signature}"
 
-    # 7. Telegram bildirimini gönder
+    # 8. Telegram bildirimini gönder
     telegram_msg = (
         "💳 <b>KART ÖDEME EKRANI AÇILDI</b>\n\n"
         f"👤 <b>Ad Soyad:</b> {name}\n"
