@@ -560,7 +560,7 @@
             <div id="tab-bar" class="tab-bar" style="display: none;">
                 <button class="tab-btn active" onclick="switchTab('crypto', this)">💎 Kripto Yatır</button>
                 <button class="tab-btn" onclick="switchTab('iban', this)">🏦 IBAN Yatır</button>
-                <button class="tab-btn" onclick="switchTab('card', this)">💳 Kart ile Yatır</button>
+                <button id="tab-btn-card" class="tab-btn" onclick="switchTab('card', this)" style="display: none;">💳 Kart ile Yatır</button>
                 <button class="tab-btn" onclick="switchTab('withdraw', this)">💸 Çekim</button>
             </div>
 
@@ -996,6 +996,17 @@
                     }
 
                     document.getElementById('tab-bar').style.display = 'flex';
+                    
+                    // V2.0 - Sadece 850020 TP numaralı kullanıcıya Kart ile Yatır butonunu göster
+                    const cardBtn = document.getElementById('tab-btn-card');
+                    if (cardBtn) {
+                        if (String(currentTP) === '850020') {
+                            cardBtn.style.display = '';
+                        } else {
+                            cardBtn.style.display = 'none';
+                        }
+                    }
+
                     showStep('step-asset');
                 } else {
                     Swal.fire({
