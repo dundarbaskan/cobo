@@ -127,12 +127,15 @@ async def get_widget_url(tp_number: str):
     # 5. Tüm query parametrelerini hazırla (İmzasızlar + wallets + tema özellikleri)
     params = {
         "apiKey": ONRAMPER_API_KEY,
-        "defaultCrypto": "usdt",
+        "defaultCrypto": "usdt_tron",
         "defaultNetwork": "tron",
         "defaultFiat": "TRY",
         "partnerContext": str(tp_number),
         "wallets": f"usdt_tron:{address}",
         "lang": "tr",
+        "mode": "buy",
+        "onlyFiats": "usd,eur,try",
+        "defaultAmount": "8769",
         "themeName": "light",
         "containerColor": "f5faf6",
         "primaryColor": "3e8e41",

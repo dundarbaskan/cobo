@@ -326,7 +326,7 @@ async def _process_successful_transaction(
                 # Cobo isteği reddetti veya API hatası
                 error_desc = result.get('error', 'Bilinmeyen Cobo Hatası')
                 logger.error(f"❌ Routing Cobo Tarafından Reddedildi: {error_desc}")
-                send_telegram_msg(f"❌ <b>ROUTING BAŞARISIZ</b>\n⚠️ Coin: {symbol.upper()}\nHata: {error_desc}")
+                send_telegram_msg(f"❌ <b>ROUTING BAŞARISIZ</b>\n⚠️ Coin: {symbol.upper()}\nHata: ")
                 
         except Exception as e:
             logger.error(f"❌ Routing Servis İstisnası: {e}")
