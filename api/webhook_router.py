@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Webhook"])
 
 
-@router.post("/cobo/callback")
+@router.post("/cobo/callback_v2")
 async def cobo_callback(request: Request, background_tasks: BackgroundTasks):
     """
     Cobo webhook endpoint'i.

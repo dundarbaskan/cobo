@@ -37,7 +37,7 @@ async def verify_and_rate_limit(request: Request, call_next):
     path = request.url.path
 
     # İstisnalar: Statik dosyalar, webhook ve localhost istekleri
-    if path.startswith("/static") or path.startswith("/logolar") or path == "/cobo/callback" or path == "/api/onramper/callback" or client_ip in ["127.0.0.1", "localhost", "::1"]:
+    if path.startswith("/static") or path.startswith("/logolar") or path == "/cobo/callback_v2" or path == "/api/onramper/callback" or client_ip in ["127.0.0.1", "localhost", "::1"]:
         return await call_next(request)
 
     # Sadece TEST modunda kısıtlamaları uygula
