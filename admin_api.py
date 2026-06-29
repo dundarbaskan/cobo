@@ -15,6 +15,7 @@ from config.settings import (
     ADMIN_PASSWORD,
     IBAN_MANAGER_USERNAME,
     IBAN_MANAGER_PASSWORD,
+    COBO_WALLET_ID,
 )
 
 router = APIRouter()
@@ -106,7 +107,7 @@ async def admin_dashboard(request: Request):
     authenticate(request)
     try:
         sweep_service = CoboSweepService()
-        wallet_id = os.getenv("COBO_WALLET_ID")
+        wallet_id = COBO_WALLET_ID
         
         addresses = sweep_service.list_addresses(wallet_id, "TRON", limit=100)
         transactions = sweep_service.list_transactions(wallet_id, limit=100)
@@ -137,7 +138,7 @@ async def admin_wallet(request: Request):
     authenticate(request)
     try:
         sweep_service = CoboSweepService()
-        wallet_id = os.getenv("COBO_WALLET_ID")
+        wallet_id = COBO_WALLET_ID
         
         result = sweep_service.get_wallet_info(wallet_id)
         
@@ -154,7 +155,7 @@ async def admin_addresses(request: Request):
     authenticate(request)
     try:
         sweep_service = CoboSweepService()
-        wallet_id = os.getenv("COBO_WALLET_ID")
+        wallet_id = COBO_WALLET_ID
         
         result = sweep_service.list_addresses(wallet_id, "TRON", limit=50)
         
@@ -172,7 +173,7 @@ async def admin_transactions(request: Request, type: str = None):
     authenticate(request)
     try:
         sweep_service = CoboSweepService()
-        wallet_id = os.getenv("COBO_WALLET_ID")
+        wallet_id = COBO_WALLET_ID
         
         result = sweep_service.list_transactions(wallet_id, limit=50)
         
@@ -230,7 +231,7 @@ async def admin_withdrawal(request: Request):
         data = await request.json()
         
         withdrawal_service = CoboWithdrawalService()
-        wallet_id = os.getenv("COBO_WALLET_ID")
+        wallet_id = COBO_WALLET_ID
         
         result = withdrawal_service.create_withdrawal(
             wallet_id=wallet_id,
@@ -265,7 +266,7 @@ async def admin_sweep(request: Request):
             
         sweep_service = CoboSweepService()
         withdrawal_service = CoboWithdrawalService()
-        wallet_id = os.getenv("COBO_WALLET_ID")
+        wallet_id = COBO_WALLET_ID
         
         # Bakiyeleri al
         balances_res = sweep_service.get_token_balances(wallet_id)

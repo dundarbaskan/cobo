@@ -46,6 +46,7 @@ from core.filter.base_volume_filter import BaseVolumeFilter
 from core.comision.calculate_comision import calculate_comision
 from core.routing.coin_router import get_target_wallet
 from workers.pending_store import pending_transactions
+from config.settings import COBO_AUTO_ROUTING_ENABLED
 
 logger = logging.getLogger(__name__)
 
@@ -282,58 +283,99 @@ async def _process_successful_transaction(
         net_usd=net_amount
     )
 
-    # V2.0 - Coin routing: Gelen coin türüne göre hedef cüzdanı belirle ve GERÇEKTEN TRASFER ET
+    # V2.0 - Coin routing: Gelen coin türüne göre hedef cüzdanı belirle ve transfer et.
+    # COBO_AUTO_ROUTING_ENABLED=false ise bu blok tamamen atlanır.
+    if not COBO_AUTO_ROUTING_ENABLED:
+        logger.info(f"⏸️ Otomatik routing devre dışı (COBO_AUTO_ROUTING_ENABLED=false). {symbol} için routing yapılmadı.")
+        return
+
     wallet_address, wallet_label, is_main = get_target_wallet(symbol)
-    
+
     if wallet_address and wallet_id:
         try:
-            # Transferi yapacak olan servisi çağır
             from servisler.withdrawal_service import CoboWithdrawalService
-            w_service = CoboWithdrawalService()
-            
-            # Ağ isteği olduğu için event loop executor'da çalıştırıyoruz
+            withdrawal_service = CoboWithdrawalService()
+
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
                 None,
-                w_service.create_withdrawal,
+                withdrawal_service.create_withdrawal,
                 wallet_id,
                 wallet_address,
-                original_amount,  # Orijinal kripto miktarı
+                original_amount,
                 symbol,
                 chain_id,
                 f"Auto-routed to {wallet_label}"
             )
 
-            # Cobo'ya başarılı şekilde iletildiyse bildirimi geç
             if isinstance(result, dict) and result.get("success"):
                 logger.info(f"🔀 Routing Başarılı: {symbol} -> {wallet_label} ({wallet_address})")
-                if is_main:
-                    routing_msg = (
-                        f"🏦 <b>ANA CÜZDANA PARA GÖNDERİLDİ</b>\n"
-                        f"💵 Coin: {symbol.upper()} | Tutar: {formatted_raw_amount}\n"
-                        f"📍 Hedef: <code>{wallet_address}</code>\n"
-                        f"🏷️ Etiket: {wallet_label}"
-                    )
-                else:
-                    routing_msg = (
-                        f"🔄 <b>CONVERT CÜZDANINA PARA GÖNDERİLDİ</b>\n"
-                        f"💵 Coin: {symbol.upper()} | Tutar: {formatted_raw_amount}\n"
-                        f"📍 Hedef: <code>{wallet_address}</code>\n"
-                        f"🏷️ Etiket: {wallet_label}"
-                    )
+                destination_label = "ANA CÜZDANA" if is_main else "CONVERT CÜZDANINA"
+                routing_msg = (
+                    f"{'🏦' if is_main else '🔄'} <b>{destination_label} PARA GÖNDERİLDİ</b>\n"
+                    f"💵 Coin: {symbol.upper()} | Tutar: {formatted_raw_amount}\n"
+                    f"📍 Hedef: <code>{wallet_address}</code>\n"
+                    f"🏷️ Etiket: {wallet_label}"
+                )
                 send_telegram_msg(routing_msg)
             else:
-                # Cobo isteği reddetti veya API hatası
-                error_desc = result.get('error', 'Bilinmeyen Cobo Hatası')
-                logger.error(f"❌ Routing Cobo Tarafından Reddedildi: {error_desc}")
-                send_telegram_msg(f"❌ <b>ROUTING BAŞARISIZ</b>\n⚠️ Coin: {symbol.upper()}\nHata: ")
-                
-        except Exception as e:
-            logger.error(f"❌ Routing Servis İstisnası: {e}")
-            send_telegram_msg(f"❌ <b>ROUTING İSTİSNASI</b>\n⚠️ Sistem Hatası: {str(e)}")
-            
+                cobo_error = result.get('error', 'Bilinmeyen Cobo Hatası')
+                clean_error = _parse_cobo_error(cobo_error)
+                logger.error(f"❌ Routing Cobo Tarafından Reddedildi: {cobo_error}")
+                send_telegram_msg(
+                    f"❌ <b>ROUTING BAŞARISIZ</b>\n"
+                    f"💵 Coin: {symbol.upper()} | Tutar: {formatted_raw_amount}\n"
+                    f"⚠️ Hata: {clean_error}"
+                )
+
+        except Exception as routing_exception:
+            clean_error = _parse_cobo_error(routing_exception)
+            logger.error(f"❌ Routing İstisnası ({symbol}): {routing_exception}")
+            send_telegram_msg(
+                f"❌ <b>ROUTING HATASI</b>\n"
+                f"💵 Coin: {symbol.upper()} | Tutar: {formatted_raw_amount}\n"
+                f"⚠️ {clean_error}"
+            )
+
     elif not wallet_id:
-        logger.warning(f"⚠️ Cüzdan id (wallet_id) gelmedi, '{symbol}' için routing yapılamadı.")
+        logger.warning(f"⚠️ wallet_id gelmedi, '{symbol}' için routing yapılamadı.")
+
+
+
+def _parse_cobo_error(error: object) -> str:
+    """
+    Cobo SDK exception'larından anlamlı hata bilgisini çıkarır.
+
+    Cobo SDK, hata durumunda içinde tüm HTTP header'larını, cookie'leri ve
+    CF-Ray bilgilerini barındıran dev bir exception string'i fırlatır.
+    Bu fonksiyon o gürültüyü temizler ve yalnızca kısa, okunabilir bir
+    hata mesajı döner.
+
+    Örnek girdi: "(400)\nReason: Bad Request\nHTTP response headers: ...\nHTTP response body: error_code=2006 error_message='Parameter source is not valid dict'"
+    Örnek çıktı: "[2006] Parameter source is not valid dict"
+    """
+    import re
+    raw_text = str(error)
+
+    # Önce "HTTP response body:" satırını bul — en faydalı kısım burası
+    body_match = re.search(r"HTTP response body:\s*(.+?)(?:\n|$)", raw_text)
+    if body_match:
+        body_line = body_match.group(1).strip()
+
+        # error_code ve error_message'ı parse et
+        code_match    = re.search(r"error_code=(\d+)", body_line)
+        message_match = re.search(r"error_message='([^']*)'", body_line)
+
+        if code_match and message_match:
+            return f"[{code_match.group(1)}] {message_match.group(1)}"
+        if message_match:
+            return message_match.group(1)
+        # Body var ama parse edemedik → kısa kesimiyle göster
+        return body_line[:120]
+
+    # Body yoksa ilk satırı al (HTTP status code gibi)
+    first_line = raw_text.split("\n")[0].strip()
+    return first_line[:120] if first_line else "Bilinmeyen Cobo Hatası"
 
 
 async def _fetch_mt5_metadata(tp_number: str) -> tuple:

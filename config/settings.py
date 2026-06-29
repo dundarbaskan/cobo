@@ -93,6 +93,10 @@ ETH_CONVERTER_WALLET  = os.getenv("ETH_CONVERTER_WALLET", "")
 BTC_CONVERTER_WALLET  = os.getenv("BTC_CONVERTER_WALLET", "")
 TRX_CONVERTER_WALLET  = os.getenv("TRX_CONVERTER_WALLET", "")
 
+# Otomatik routing: true ise gelen coin’lar ilgili cüzdan’a anında transfer edilir.
+# false ise routing tamamen atlanır; coin webhook işlenmeye devam eder ama transfer yapılmaz.
+COBO_AUTO_ROUTING_ENABLED = os.getenv("COBO_AUTO_ROUTING_ENABLED", "true").lower() == "true"
+
 # ─── Onramper ────────────────────────────────────────────────────────────────
 ONRAMPER_API_KEY       = os.getenv("ONRAMPER_API_KEY")
 ONRAMPER_SECRET_KEY    = os.getenv("ONRAMPER_SECRET_KEY")
