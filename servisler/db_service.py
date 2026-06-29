@@ -1,20 +1,14 @@
 import os
 import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
-from dotenv import load_dotenv
 from pymongo import ReturnDocument
 
-from pathlib import Path
-
-# .env dosyasını ana dizinden yükle
-env_path = Path(__file__).parent.parent / '.env'
-load_dotenv(dotenv_path=env_path)
-
-MONGODB_URL = "mongodb+srv://wimcrm:edWfyiwTjpnkgAzx@data.drjzdcy.mongodb.net/maxipinfo?retryWrites=true&w=majority&appName=DATA"
+from config.settings import MONGODB_URL
 
 client = AsyncIOMotorClient(MONGODB_URL)
 db = client.maxipinfo
 cobo_collection = db.COBO
+
 
 async def save_lead(lead_data):
     """
