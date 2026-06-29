@@ -22,9 +22,14 @@ from config.settings import (
     ONRAMPER_API_KEY,
     ONRAMPER_SECRET_KEY,
     ONRAMPER_WIDGET_URL,
+    ONRAMPER_DEFAULT_CRYPTO,
+    ONRAMPER_DEFAULT_NETWORK,
+    ONRAMPER_DEFAULT_FIAT,
+    ONRAMPER_DEFAULT_AMOUNT,
     COBO_API_KEY,
     COBO_API_SECRET,
     COBO_WALLET_ID,
+    COBO_API_HOST,
     logger
 )
 from servisler.db_service import (
@@ -52,7 +57,7 @@ async def _get_or_create_usdt_tron_wallet(tp_number: str) -> str:
     try:
         configuration = Configuration(
             api_private_key=COBO_API_SECRET,
-            host="https://api.cobo.com/v2"
+            host=COBO_API_HOST
         )
         configuration.verify_ssl = False
 
@@ -127,15 +132,15 @@ async def get_widget_url(tp_number: str):
     # 5. Tüm query parametrelerini hazırla (İmzasızlar + wallets + tema özellikleri)
     params = {
         "apiKey": ONRAMPER_API_KEY,
-        "defaultCrypto": "usdt_tron",
-        "defaultNetwork": "tron",
-        "defaultFiat": "TRY",
+        "defaultCrypto": f"{ONRAMPER_DEFAULT_CRYPTO.lower()}_{ONRAMPER_DEFAULT_NETWORK.lower()}",
+        "defaultNetwork": ONRAMPER_DEFAULT_NETWORK.lower(),
+        "defaultFiat": ONRAMPER_DEFAULT_FIAT.upper(),
         "partnerContext": str(tp_number),
         "wallets": f"usdt_tron:{address}",
         "lang": "tr",
         "mode": "buy",
         "onlyFiats": "usd,eur,try",
-        "defaultAmount": "8769",
+        "defaultAmount": ONRAMPER_DEFAULT_AMOUNT,
         "themeName": "light",
         "containerColor": "f5faf6",
         "primaryColor": "3e8e41",

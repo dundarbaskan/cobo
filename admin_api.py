@@ -10,18 +10,14 @@ from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from servisler.sweep_service import CoboSweepService
 from servisler.withdrawal_service import CoboWithdrawalService
+from config.settings import (
+    ADMIN_USERNAME,
+    ADMIN_PASSWORD,
+    IBAN_MANAGER_USERNAME,
+    IBAN_MANAGER_PASSWORD,
+)
 
 router = APIRouter()
-
-# ── Kullanıcı Tanımları ──────────────────────────────────────────
-# Süper Admin: Her şeye erişebilir
-ADMIN_USERNAME = "besimtrump18"
-ADMIN_PASSWORD = "Bg180913*"
-
-# IBAN Yöneticisi: Sadece /api/admin/ibans endpointlerine erişebilir
-IBAN_MANAGER_USERNAME = "ibansorumlusu"
-IBAN_MANAGER_PASSWORD = "Iban2026!"
-# ────────────────────────────────────────────────────────────────
 
 def _parse_basic_auth(request: Request):
     """Authorization header'ını parse eder, (username, password) döndürür."""
@@ -87,11 +83,8 @@ def get_user_role(request: Request):
 
 def send_telegram_msg(message):
     """Telegram mesajı gönder"""
-    import requests
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
-    chat_id = os.getenv("TELEGRAM_CHAT_ID")
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    requests.post(url, json={"chat_id": chat_id, "text": message, "parse_mode": "HTML"})
+    from servisler.telegram_service import send_telegram_msg as _send
+    _send(message)
 
 @router.get("/admin")
 async def admin_panel():

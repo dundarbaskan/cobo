@@ -3,11 +3,15 @@ Komisyon Hesaplama Modülü
 =========================
 Kripto yatırım işlemlerinde uygulanacak komisyon tutarını hesaplar.
 
-V2.0 - Komisyon Use Case. Oran statik , dışarıdan parametre alınmaz.
+V2.0 - Komisyon oranı artık .env'den okunur (COMMISSION_RATE_PERCENT).
+       Değeri değiştirmek için deploy gerekmez.
 """
 
-# V2.0 - Statik komisyon oranı. .env veya dışarıdan alınmaz, buradan yönetilir.
-COMISION_RATE = 0  # Yüzde olarak: %0
+import os
+from config.settings import COMMISSION_RATE_PERCENT
+
+# .env → COMMISSION_RATE_PERCENT (örn: 5 → %5, 0 → %0 komisyonsuz)
+COMISION_RATE = COMMISSION_RATE_PERCENT
 
 
 def calculate_comision(gross_amount: float) -> dict:

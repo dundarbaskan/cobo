@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 # Config ve Servisler
-from config.settings import logger, PORT, ENVIRONMENT
+from config.settings import logger, PORT, ENVIRONMENT, ALLOWED_TEST_IP
 from servisler.db_service import ensure_transaction_index
 
 # API Routers
@@ -28,7 +28,6 @@ from bot.telegram_bot import run_telegram_bot
 app = FastAPI(title="COBO API", version="2.0")
 
 # --- Güvenlik ve Rate Limit Ayarları ---
-ALLOWED_TEST_IP = "78.135.2.18"
 REQUEST_COUNTS = {}
 
 @app.middleware("http")

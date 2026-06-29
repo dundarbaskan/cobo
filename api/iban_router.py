@@ -35,6 +35,7 @@ from servisler.db_service import (
 )
 from servisler.telegram_service import send_telegram_msg
 from admin_api import authenticate, authenticate_iban
+from config.settings import COMPANY_NAME, DEFAULT_AGENT_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -133,10 +134,10 @@ async def iban_deposit(
         f"<b>IBAN:</b> <code>{iban.get('iban')}</code>\n"
         f"<b>Döviz:</b> {doviz}\n"
         f"<b>Miktar:</b> {tr_format(tutar)} {doviz}\n"
-        f"<b>Firma Adı:</b> Anadolu Varlık Yatırım\n"
+        f"<b>Firma Adı:</b> {COMPANY_NAME}\n"
         f"<b>CRM NO:</b> {lead.get('crm_no', 'N/A')}\n"
         f"<b>MT5 :</b> <code>{tp_number}</code>\n"
-        f"<b>Müşteri Temsilcisi:</b> {lead.get('agent', 'Engin Öztürk')}\n"
+        f"<b>Müşteri Temsilcisi:</b> {lead.get('agent', DEFAULT_AGENT_NAME)}\n"
         f"<b>Departman:</b> {lead.get('department', 'MAIN')}\n"
         f"<b>Ref:</b> {lead.get('reference', 'N/A')}\n"
         f"<b>Toplam Yatırım:</b> {tr_format(lead.get('total_deposit', 0.0))}\n"

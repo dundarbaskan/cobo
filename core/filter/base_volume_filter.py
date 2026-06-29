@@ -1,4 +1,5 @@
 import logging
+from config.settings import MIN_DEPOSIT_USD_LIMIT
 
 # Logger ayarları
 logger = logging.getLogger("VolumeFilter")
@@ -30,7 +31,7 @@ class BaseVolumeFilter:
     }
 
     @staticmethod
-    async def should_block_transaction(symbol: str, amount: float, transaction_id: str = "N/A", min_usd_limit: float = 1.0) -> bool:
+    async def should_block_transaction(symbol: str, amount: float, transaction_id: str = "N/A", min_usd_limit: float = None) -> bool:
         """
         Bir işlemin limit altında kalıp kalmadığını MANUEL LİSTE üzerinden kontrol eder.
         
@@ -38,11 +39,13 @@ class BaseVolumeFilter:
             symbol (str): Coin sembolü (BTC, ETH, vb.)
             amount (float): İşlem miktarı
             transaction_id (str): Loglama için işlem ID'si
-            min_usd_limit (float): USD cinsinden minimum kabul edilebilir değer (Default: $1)
+            min_usd_limit (float): USD cinsinden minimum kabul edilebilir değer
+                                   (None ise .env'deki MIN_DEPOSIT_USD_LIMIT kullanılır)
             
         Returns:
             bool: True ise İŞLEM ENGELLENMELİDİR. False ise işlem geçerlidir.
         """
+        effective_limit = min_usd_limit if min_usd_limit is not None else MIN_DEPOSIT_USD_LIMIT
         try:
             # 1. Veri Normalizasyonu
             symbol = str(symbol).strip().upper()
@@ -76,12 +79,12 @@ class BaseVolumeFilter:
             usd_value = amount * usd_rate
             
             # 4. Limit Kontrolü
-            if usd_value < min_usd_limit:
+            if usd_value < effective_limit:
                 # Özel durum: Eğer oran 0 ise (bilinmeyen coin) ve biz engellemek istemiyorsak burayı revize ederiz.
-                # Ancak şu an listede olmayanları da limit altı sayıp engeller (usd_value=0 < 1).
+                # Ancak şu an listede olmayanları da limit altı sayıp engeller (usd_value=0 < effective_limit).
                 # Main.py'de zaten allowed_tokens kontrolü var, o yüzden burada sadece o listedekiler gelir.
                 
-                BaseVolumeFilter._log_block(symbol, amount, usd_value, min_usd_limit, transaction_id)
+                BaseVolumeFilter._log_block(symbol, amount, usd_value, effective_limit, transaction_id)
                 return True # BLOCK
 
             # İşlem limitin üzerinde, geçerli.

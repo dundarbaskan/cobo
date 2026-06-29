@@ -20,7 +20,7 @@ import logging
 from fastapi import APIRouter, Form
 from servisler.sweep_service import CoboSweepService
 from servisler.telegram_service import send_telegram_msg
-from config.settings import COBO_WALLET_ID
+from config.settings import COBO_WALLET_ID, APP_BASE_URL
 
 # V2.0 - Onay/ret işlemleri için gerekli import'lar
 from workers.pending_store import pending_transactions
@@ -205,37 +205,13 @@ def _handle_admin_command():
     """
     /admin komutunu işler - Admin panel linkini gönderir
     """
-    admin_url = "https://srv.cepteportfoy.com/admin.html"
+    admin_url = f"{APP_BASE_URL}/admin.html" if APP_BASE_URL else "/admin.html"
     msg = (
-        f"🔑 <b>ADMIN PANEL ERİŞİMİ</b>\n\n"
+        f"🔑 <b>ADMİN PANEL ERİŞİMİ</b>\n\n"
         f"🌐 {admin_url}\n\n"
         f"💡 <i>Panel üzerinden para çekme ve istatistikleri yönetebilirsiniz.</i>"
     )
     send_telegram_msg(msg)
     return {"status": "success", "message": "Admin link sent"}
-
-
-
-@router.post("/telegram_command")
-async def telegram_command(command: str = Form(...)):
-    """
-    Telegram bot komutlarını işle
-    """
-    logger.info(f"📨 Telegram komutu alındı: {command}")
-
-    try:
-        if command.strip().lower() == "/sweep":
-            return await _handle_sweep_command()
-
-        elif command.strip().lower() == "/admin":
-            return _handle_admin_command()
-
-        else:
-            return {"status": "error", "message": "Unknown command"}
-
-    except Exception as e:
-        logger.error(f"❌ Telegram command error: {e}")
-        send_telegram_msg(f"❌ <b>KOMUT HATASI</b>\n⚠️ {str(e)}")
-        return {"status": "error", "message": str(e)}
 
 
